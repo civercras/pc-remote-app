@@ -1,0 +1,14 @@
+# Datos personales: el código de acceso y la lista TV de cada usuario
+config.json
+config.tmp
+mando.log
+
+# Copias de versiones anteriores
+v0.*/
+
+# Python y compilación
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
