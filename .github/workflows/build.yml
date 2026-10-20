@@ -1,8 +1,11 @@
-# Builds MandoPC.exe on Windows for every version tag (v*) or when run manually from the Actions tab.
+# Builds MandoPC.exe on Windows.
+# On every push to main it reads VERSION from server.py; if there is no release
+# for that version yet, it creates the tag and publishes the release with the .exe.
 name: Build MandoPC.exe
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -14,6 +17,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Read version
+        id: v
+        shell: bash
+        run: |
+          VERSION=$(sed -n 's/^VERSION = "\(.*\)"/\1/p' server.py)
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - uses: actions/setup-python@v5
         with:
@@ -41,9 +54,11 @@ jobs:
           path: dist/MandoPC.exe
 
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.v.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/MandoPC.exe
-          name: Mando PC ${{ github.ref_name }}
+          tag_name: ${{ steps.v.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Mando PC ${{ steps.v.outputs.tag }}
           body_path: .github/RELEASE.md
+          files: dist/MandoPC.exe
