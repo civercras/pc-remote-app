@@ -18,8 +18,10 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/hero.png" alt="Mando PC on three phones: light theme, dark theme and the quick menu">
+  <a href="docs/video/mando-pc-showcase.mp4"><img src="docs/screenshots/hero.png" alt="Mando PC on three phones: light theme, dark theme and the quick menu"></a>
 </p>
+
+<p align="center"><a href="docs/video/mando-pc-showcase.mp4"><b>▶ Watch the 45-second video</b></a></p>
 
 ---
 
