@@ -26,7 +26,7 @@ from pathlib import Path
 
 from aiohttp import web, WSMsgType
 
-VERSION = "1.0"
+VERSION = "1.1"
 FROZEN = getattr(sys, "frozen", False)               # True dentro del .exe
 # RES: archivos de la app (página, icono). DATA: configuración y registro.
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -39,6 +39,56 @@ CONFIG_PATH = DATA / "config.json"
 WHEEL_DELTA = 120  # unidades de Windows por "muesca" de rueda
 
 log = logging.getLogger("mando")
+
+
+def detect_lang():
+    """Idioma de los avisos del PC: español si Windows (o el sistema) está en español; si no, inglés."""
+    forced = os.environ.get("MANDO_LANG", "").lower()
+    if forced in ("es", "en"):
+        return forced
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            return "es" if ctypes.windll.kernel32.GetUserDefaultUILanguage() & 0x3FF == 0x0A else "en"
+        import locale
+        loc = os.environ.get("LC_ALL") or os.environ.get("LC_MESSAGES") or os.environ.get("LANG") or (locale.getlocale()[0] or "")
+        return "es" if loc.lower().startswith("es") else "en"
+    except Exception:
+        return "en"
+
+
+LANG = detect_lang()
+EN = {
+    "Mando PC · Conectar móvil": "Mando PC · Connect phone",
+    "Escanea con la cámara del móvil": "Scan with your phone's camera",
+    "El móvil y el PC tienen que estar en la misma red": "Your phone and PC need to be on the same network",
+    "Si no carga, prueba con la IP {0}": "If it doesn't load, try the IP {0}",
+    " o ": " or ",
+    "¡Copiado!": "Copied!", "Copiar enlace": "Copy link", "Cerrar": "Close",
+    "Para que tu móvil pueda conectarse, Windows te pedirá permiso una sola vez.\n\nPulsa «Sí» en la siguiente ventana.":
+        "So your phone can connect, Windows will ask for permission once.\n\nClick \"Yes\" in the next window.",
+    "¿Quieres que Mando PC se inicie solo al encender el PC?\n\nPuedes cambiarlo cuando quieras desde su icono, junto al reloj.":
+        "Start Mando PC automatically when your PC turns on?\n\nYou can change this any time from its icon next to the clock.",
+    "Conectar móvil…": "Connect phone…", "Iniciar con Windows": "Start with Windows",
+    "Permitir la conexión en el firewall": "Allow the connection in the firewall",
+    "Abrir carpeta de datos": "Open data folder", "Salir": "Quit",
+    "Mando PC ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^).":
+        "Mando PC is already running.\n\nLook for its icon next to the clock (it may be under the ^ arrow).",
+    "\n  Mando PC {0} en marcha": "\n  Mando PC {0} is running", "  (MODO SIMULACIÓN)": "  (SIMULATION MODE)",
+    "  Abre esto en el móvil (misma Wi-Fi):\n": "  Open this on your phone (same Wi-Fi):\n",
+    "  Si no carga, prueba cambiando la IP por: {0}\n": "  If it doesn't load, try this IP instead: {0}\n",
+    "  Ctrl+C para cerrar.\n": "  Press Ctrl+C to stop.\n",
+    "\n  El puerto {0} está ocupado: seguramente Mando PC ya está en marcha en segundo plano. No hace falta abrirlo otra vez.\n":
+        "\n  Port {0} is busy: Mando PC is probably already running in the background. No need to open it again.\n",
+    "  También está junto al reloj: clic en su icono para ver el QR. Ctrl+C o cerrar esta ventana lo detiene.\n":
+        "  It's also next to the clock: click its icon to see the QR. Ctrl+C or closing this window stops it.\n",
+}
+
+
+def T(s, *a):
+    """Texto en el idioma del PC (las cadenas se escriben en español)."""
+    r = EN.get(s, s) if LANG == "en" else s
+    return r.format(*a) if a else r
 
 DEFAULT_CONFIG = {
     "port": 8765,
@@ -63,7 +113,8 @@ DEFAULT_CONFIG = {
         {"name": "Netflix", "url": "https://www.netflix.com"},
         {"name": "Prime Video", "url": "https://www.primevideo.com"},
         {"name": "Disney+", "url": "https://www.disneyplus.com"},
-        {"name": "Movistar Plus+", "url": "https://ver.movistarplus.es"},
+        {"name": "Movistar Plus+", "url": "https://ver.movistarplus.es"} if LANG == "es"
+        else {"name": "Max", "url": "https://play.max.com"},
         {"name": "Twitch", "url": "https://www.twitch.tv"},
         {"name": "Spotify", "url": "https://open.spotify.com"},
     ],
@@ -1026,7 +1077,7 @@ def show_qr_window(url, others=()):
             from PIL import Image, ImageTk
             BG, FG, MUT = "#111111", "#F2F2F2", "#9A9A9A"
             root = tk.Tk()
-            root.title("Mando PC · Conectar móvil")
+            root.title(T("Mando PC · Conectar móvil"))
             root.configure(bg=BG, padx=28, pady=24)
             root.resizable(False, False)
             try:
@@ -1039,9 +1090,9 @@ def show_qr_window(url, others=()):
             img = getattr(img, "get_image", lambda: img)().convert("RGB").resize((300, 300), Image.NEAREST)
             photo = ImageTk.PhotoImage(img)
             font = "Segoe UI" if IS_WIN else "TkDefaultFont"
-            tk.Label(root, text="Escanea con la cámara del móvil", bg=BG, fg=FG,
+            tk.Label(root, text=T("Escanea con la cámara del móvil"), bg=BG, fg=FG,
                      font=(font, 15, "bold")).pack(pady=(0, 4))
-            tk.Label(root, text="El móvil y el PC tienen que estar en la misma red", bg=BG, fg=MUT,
+            tk.Label(root, text=T("El móvil y el PC tienen que estar en la misma red"), bg=BG, fg=MUT,
                      font=(font, 10)).pack(pady=(0, 14))
             tk.Label(root, image=photo, bg="white", bd=0).pack()
             e = tk.Entry(root, font=(font, 10), justify="center", relief="flat", bg="#1E1E1E", fg=FG,
@@ -1050,7 +1101,7 @@ def show_qr_window(url, others=()):
             e.configure(state="readonly")
             e.pack(fill="x", pady=(16, 4), ipady=6)
             if others:
-                tk.Label(root, text="Si no carga, prueba con la IP " + " o ".join(others), bg=BG, fg=MUT,
+                tk.Label(root, text=T("Si no carga, prueba con la IP {0}", T(" o ").join(others)), bg=BG, fg=MUT,
                          font=(font, 9)).pack()
             row = tk.Frame(root, bg=BG)
             row.pack(pady=(14, 0))
@@ -1058,11 +1109,11 @@ def show_qr_window(url, others=()):
             def copy():
                 root.clipboard_clear()
                 root.clipboard_append(url)
-                b1.configure(text="¡Copiado!")
-            b1 = tk.Button(row, text="Copiar enlace", command=copy, relief="flat", bg="#2A2A2A", fg=FG,
+                b1.configure(text=T("¡Copiado!"))
+            b1 = tk.Button(row, text=T("Copiar enlace"), command=copy, relief="flat", bg="#2A2A2A", fg=FG,
                            activebackground="#3A3A3A", activeforeground=FG, font=(font, 10), padx=16, pady=6)
             b1.pack(side="left", padx=4)
-            tk.Button(row, text="Cerrar", command=root.destroy, relief="flat", bg=FG, fg=BG,
+            tk.Button(row, text=T("Cerrar"), command=root.destroy, relief="flat", bg=FG, fg=BG,
                       activebackground="#FFFFFF", font=(font, 10, "bold"), padx=22, pady=6).pack(side="left", padx=4)
             root.attributes("-topmost", True)
             root.after(400, lambda: root.attributes("-topmost", False))
@@ -1113,13 +1164,13 @@ def first_run_setup(cfg, url, others):
     port = cfg["port"]
     changed = False
     if IS_WIN and not cfg.get("firewall_asked") and not firewall_ok():
-        message_box("Para que tu móvil pueda conectarse, Windows te pedirá permiso una sola vez.\n\n"
-                    "Pulsa «Sí» en la siguiente ventana.")
+        message_box(T("Para que tu móvil pueda conectarse, Windows te pedirá permiso una sola vez.\n\n"
+                      "Pulsa «Sí» en la siguiente ventana."))
         request_firewall(port)
         cfg["firewall_asked"] = changed = True
     if IS_WIN and not cfg.get("autostart_asked") and not autostart_enabled():
-        if message_box("¿Quieres que Mando PC se inicie solo al encender el PC?\n\n"
-                       "Puedes cambiarlo cuando quieras desde su icono, junto al reloj.", yes_no=True):
+        if message_box(T("¿Quieres que Mando PC se inicie solo al encender el PC?\n\n"
+                         "Puedes cambiarlo cuando quieras desde su icono, junto al reloj."), yes_no=True):
             set_autostart(True)
         cfg["autostart_asked"] = changed = True
     if not cfg.get("welcomed"):
@@ -1156,13 +1207,13 @@ def run_tray(cfg, url, others, on_quit):
 
     menu = pystray.Menu(
         pystray.MenuItem(f"Mando PC {VERSION}", None, enabled=False),
-        pystray.MenuItem("Conectar móvil…", qr, default=True),
+        pystray.MenuItem(T("Conectar móvil…"), qr, default=True),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Iniciar con Windows", toggle_autostart, checked=lambda item: autostart_enabled()),
-        pystray.MenuItem("Permitir la conexión en el firewall", fix_firewall, visible=lambda item: not fw["ok"]),
-        pystray.MenuItem("Abrir carpeta de datos", open_data),
+        pystray.MenuItem(T("Iniciar con Windows"), toggle_autostart, checked=lambda item: autostart_enabled()),
+        pystray.MenuItem(T("Permitir la conexión en el firewall"), fix_firewall, visible=lambda item: not fw["ok"]),
+        pystray.MenuItem(T("Abrir carpeta de datos"), open_data),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Salir", quit_),
+        pystray.MenuItem(T("Salir"), quit_),
     )
     host = url.split("//", 1)[1].split("/", 1)[0]
     icon = pystray.Icon("MandoPC", Image.open(RES / "icon.png"), f"Mando PC · {host}", menu)
@@ -1235,12 +1286,12 @@ def main():
     ip = local_ip()
     url = f"http://{ip}:{cfg['port']}/?k={cfg['token']}"
     log.info("Mando PC %s en marcha en %s", VERSION, url.split("?")[0])
-    print(f"\n  Mando PC {VERSION} en marcha" + ("  (MODO SIMULACIÓN)" if simulate else ""))
-    print("  Abre esto en el móvil (misma Wi-Fi):\n")
+    print(T("\n  Mando PC {0} en marcha", VERSION) + (T("  (MODO SIMULACIÓN)") if simulate else ""))
+    print(T("  Abre esto en el móvil (misma Wi-Fi):\n"))
     print("  " + url + "\n")
     others = other_ips(ip)
     if others:
-        print("  Si no carga, prueba cambiando la IP por: " + ", ".join(others) + "\n")
+        print(T("  Si no carga, prueba cambiando la IP por: {0}\n", ", ".join(others)))
     try:
         import qrcode
         qr = qrcode.QRCode(border=1)
@@ -1258,22 +1309,22 @@ def main():
             tray = False
 
     if not tray:
-        print("  Ctrl+C para cerrar.\n")
+        print(T("  Ctrl+C para cerrar.\n"))
         try:
             web.run_app(app, host="0.0.0.0", port=cfg["port"], print=None, access_log=None)
         except OSError as e:
             log.error("No se pudo abrir el puerto %s: ¿ya hay otro Mando PC en marcha? (%s)", cfg["port"], e)
-            print(f"\n  El puerto {cfg['port']} está ocupado: seguramente Mando PC ya está en marcha"
-                  " en segundo plano. No hace falta abrirlo otra vez.\n")
+            print(T("\n  El puerto {0} está ocupado: seguramente Mando PC ya está en marcha"
+                    " en segundo plano. No hace falta abrirlo otra vez.\n", cfg["port"]))
         return
 
-    print("  También está junto al reloj: clic en su icono para ver el QR. Ctrl+C o cerrar esta ventana lo detiene.\n")
+    print(T("  También está junto al reloj: clic en su icono para ver el QR. Ctrl+C o cerrar esta ventana lo detiene.\n"))
     srv = ServerThread(app, cfg["port"])
     srv.start()
     srv.ready.wait(15)
     if srv.error:
         log.error("Puerto %s ocupado: Mando PC ya está en marcha (%s)", cfg["port"], srv.error)
-        message_box("Mando PC ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^).")
+        message_box(T("Mando PC ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^)."))
         return
     try:
         run_tray(cfg, url, others, srv.stop)

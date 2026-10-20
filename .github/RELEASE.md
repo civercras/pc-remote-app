@@ -4,6 +4,12 @@ Grab **`MandoPC.exe`** below, run it on your Windows PC and scan the QR code wit
 
 > **"Windows protected your PC"?** The app isn't signed with a paid certificate yet. Click **More info → Run anyway**. The full source is in this repository.
 
+## What's new in 1.1
+
+- **English interface.** The phone UI is now in English and Spanish: it picks your phone's language automatically, and there's a new **Language** option in Settings.
+- The tray menu, QR window and first-run messages on the PC follow the Windows language.
+- For non-Spanish systems, the default TV list swaps Movistar Plus+ for Max.
+
 ## What's in 1.0
 
 - **Trackpad** with natural gestures, inertia and an adjustable size (left or right side in landscape).

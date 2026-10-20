@@ -180,7 +180,7 @@ On every push to `main`, a GitHub Actions workflow builds `MandoPC.exe` on Windo
 
 ## Notes
 
-- The interface is currently in **Spanish**.
+- The interface is in **English** and **Spanish**. It follows your phone's language, and you can switch it in Settings. The PC side (tray menu, QR window) follows the Windows language.
 - Mando PC controls a **Windows** PC. The phone side works in any modern mobile browser; it's designed and tested for Android with Chrome.
 - Some things depend on Windows and the app you're using: a few browsers don't report text fields (so the **Write** button may not appear there), and the cursor halo can't draw over exclusive-fullscreen games.
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -549,7 +549,7 @@ body.tut #winflow{z-index:97} body.tut #kbdchip{z-index:97} body.tut #toast,body
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
-const VERSION = "1.0";
+const VERSION = "1.1";
 
 /* ================================================================ iconos */
 const ICON = {
@@ -611,11 +611,197 @@ function svg(name, size = 22, sw = 1.9){
 function load(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } }
 function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 const DEF = {sens:1.6, accel:1.2, scroll:1.0, natural:true, inertia:true, haptic:true, theme:"auto", xp:false, left:false,
-             dialSens:3, radial:["apps","vol","desk","kbd"], quality:"mid", lupa:false, autoFs:true, hapStr:1, reach:0, reachL:0, autoKbd:true, padSide:"right", halo:false};
+             dialSens:3, radial:["apps","vol","desk","kbd"], quality:"mid", lupa:false, autoFs:true, hapStr:1, reach:0, reachL:0, autoKbd:true, padSide:"right", halo:false, lang:"auto"};
 const S = Object.assign({}, DEF, load("mando.settings") || {});
 // opciones retiradas de Ajustes: vuelven a su valor por defecto
 S.scroll = DEF.scroll; S.left = false; S.radial = DEF.radial.slice(); S.lupa = false;
 const saveS = () => save("mando.settings", S);
+
+/* ================================================================ idioma */
+// Inglés por defecto; español si el móvil está en español. Se puede cambiar en Ajustes.
+const LANG = S.lang === "es" || S.lang === "en" ? S.lang : (/^es\b/i.test(navigator.language || "") ? "es" : "en");
+document.documentElement.lang = LANG;
+const EN = {
+"Conectando…": "Connecting…",
+"Conectado": "Connected",
+"Sin conexión, reintentando…": "Offline, retrying…",
+"Código incorrecto: escanea de nuevo el QR del PC": "Wrong code: scan the QR on your PC again",
+"Conectado a {0}": "Connected to {0}",
+"tu PC": "your PC",
+"Sin conexión": "Offline",
+"Pantalla completa": "Fullscreen",
+"Ajustes": "Settings",
+"Ver la pantalla del PC": "See the PC screen",
+"Minimizar": "Minimize",
+"Maximizar o restaurar": "Maximize or restore",
+"Cerrar ventana": "Close window",
+"Cambiar de ventana: toca para la anterior, mantén y desliza para elegir": "Switch window: tap for the previous one, hold and slide to choose",
+"Arrastra para ajustar el tamaño del trackpad": "Drag to resize the trackpad",
+"Clic izquierdo": "Left click",
+"Clic derecho": "Right click",
+"Menú rápido": "Quick menu",
+"Escribir en el PC": "Type on the PC",
+"Pantalla del PC": "PC screen",
+"Volver al mando": "Back to the remote",
+"Copiar": "Copy",
+"Pegar": "Paste",
+"Ajustar a la pantalla": "Fit to screen",
+"Girar y pantalla completa": "Rotate and fullscreen",
+"Cargando…": "Loading…",
+"Teclado": "Keyboard",
+"Cerrar": "Close",
+"{0}: ver la pantalla del PC": "{0}: see the PC screen",
+"Toca otra vez para cerrar": "Tap again to close",
+"Reproductor": "Media Player",
+"Música": "Music",
+"Bloc de notas": "Notepad",
+"Explorador": "File Explorer",
+"Escritorio": "Desktop",
+"Atrás": "Back",
+"Recargar": "Reload",
+"Nueva pestaña": "New tab",
+"Buscar en la página": "Find on page",
+"Anterior": "Previous",
+"Reproducir o pausar": "Play or pause",
+"Siguiente": "Next",
+"Silenciar": "Mute",
+"Diapositiva anterior": "Previous slide",
+"Iniciar presentación": "Start slideshow",
+"Diapositiva siguiente": "Next slide",
+"Terminar presentación": "End slideshow",
+"Carpeta superior": "Up one folder",
+"Nueva carpeta": "New folder",
+"Cambiar nombre": "Rename",
+"Deshacer": "Undo",
+"Guardar": "Save",
+"Retroceder": "Rewind",
+"Avanzar": "Forward",
+"Explorador de archivos": "File Explorer",
+"Buscar en el PC": "Search the PC",
+"Vista de tareas": "Task View",
+"Configuración de Windows": "Windows Settings",
+"Seleccionar todo": "Select all",
+"Volumen": "Volume",
+"Captura de pantalla": "Screenshot",
+"Ver pantalla": "See screen",
+"Bloquear el PC": "Lock the PC",
+"Energía": "Power",
+"Silencio": "Muted",
+"Navegador": "Browser",
+"Quitar {0}": "Remove {0}",
+"Añadir a TV": "Add to TV",
+"Volver": "Back",
+"Añadir {0}": "Add {0}",
+"Ya tienes todas las del catálogo.": "You already have everything in the catalog.",
+"Otra web": "Other website",
+"Nombre": "Name",
+"Dirección, p. ej. filmin.es": "Address, e.g. netflix.com",
+"Dirección web": "Web address",
+"Añadir": "Add",
+"Esa dirección no parece válida": "That address doesn't look valid",
+"Editar TV": "Edit TV",
+"Toca la ✕ para quitar. Pulsa Listo al terminar.": "Tap ✕ to remove. Tap Done when you finish.",
+"Mantén pulsado para editar": "Hold to edit",
+"Listo": "Done",
+"Bloquear": "Lock",
+"Suspender": "Sleep",
+"Reiniciar": "Restart",
+"Apagar": "Shut down",
+"{0} (mantén pulsado)": "{0} (hold)",
+"PC bloqueado": "PC locked",
+"Mantén pulsado para confirmar": "Hold to confirm",
+"Mantén pulsado para suspender, reiniciar o apagar": "Hold to sleep, restart or shut down",
+"Suspendiendo el PC…": "Putting the PC to sleep…",
+"Reiniciando": "Restarting",
+"Apagando": "Shutting down",
+"{0} el PC en {1} s": "{0} the PC in {1} s",
+"Cancelar": "Cancel",
+"Reinicio cancelado": "Restart cancelled",
+"Apagado cancelado": "Shutdown cancelled",
+"Texto para enviar al PC": "Text to send to the PC",
+"Enviar texto": "Send text",
+"Enviar y pulsar Intro": "Send and press Enter",
+"Borrar texto": "Clear text",
+"Retroceso": "Backspace",
+"Suprimir": "Delete",
+"Intro": "Enter",
+"Inicio": "Home",
+"Izquierda": "Left",
+"Arriba": "Up",
+"Abajo": "Down",
+"Derecha": "Right",
+"Fin": "End",
+"Espacio": "Space",
+"Re Pág": "Page Up",
+"Av Pág": "Page Down",
+"Escribir": "Type",
+"Conexión": "Connection",
+"Reconectar": "Reconnect",
+"Olvidar este PC": "Forget this PC",
+"Escanea el QR del PC para volver a conectar": "Scan the QR on your PC to connect again",
+"Sensibilidad": "Sensitivity",
+"Aceleración": "Acceleration",
+"Desplazamiento natural": "Natural scrolling",
+"Inercia": "Inertia",
+"Sensibilidad del dial": "Dial sensitivity",
+"Baja": "Low",
+"Media": "Medium",
+"Alta": "High",
+"Trackpad con el móvil en horizontal": "Trackpad side in landscape",
+"En el PC": "On the PC",
+"Resaltar el cursor para verlo de lejos": "Highlight the cursor so you can see it from afar",
+"Apariencia": "Appearance",
+"Auto": "Auto",
+"Oscuro": "Dark",
+"Claro": "Light",
+"Pantalla completa automática": "Automatic fullscreen",
+"Vibración": "Vibration",
+"Este navegador no permite que la página haga vibrar el móvil.": "This browser doesn't let web pages vibrate the phone.",
+"Suave": "Soft",
+"Fuerte": "Strong",
+"Probar vibración": "Test vibration",
+"¿No notas nada? Revisa que el móvil no esté en silencio, en No molestar o en ahorro de batería, y que la vibración táctil esté activada en sus ajustes.": "Feel nothing? Check that the phone isn't on silent, Do Not Disturb or battery saver, and that touch vibration is on in its settings.",
+"Pantalla y escritura": "Screen and typing",
+"Fluida": "Smooth",
+"Nítida": "Sharp",
+"Ofrecer el teclado al escribir en el PC": "Offer the keyboard when typing on the PC",
+"Ayuda": "Help",
+"Ver el tutorial": "Show the tutorial",
+"Idioma": "Language",
+"El tema Luna ya está desbloqueado": "The Luna theme is already unlocked",
+"Te faltan {0} toques": "{0} more taps",
+"Tema Luna desbloqueado": "Luna theme unlocked",
+"Trackpad a tamaño normal": "Trackpad back to normal size",
+"La vista de pantalla necesita mss y Pillow en el PC": "Screen view needs mss and Pillow on the PC",
+"No se pudo obtener la pantalla del PC": "Couldn't get the PC screen",
+"Gira el móvil para verla en horizontal": "Turn your phone to see it in landscape",
+"Tu ratón": "Your mouse",
+"Pruébalo: desliza un dedo para mover el cursor y toca para hacer clic. Con dos dedos, desplazas.": "Try it: slide a finger to move the cursor and tap to click. Use two fingers to scroll.",
+"Clic izquierdo y derecho": "Left and right click",
+"Pruébalo. Para arrastrar, mantén uno pulsado y mueve con otro dedo en el trackpad.": "Try them. To drag, hold one and move another finger on the trackpad.",
+"Cambiar de ventana": "Switch windows",
+"Pruébalo: toca para volver a la anterior, o mantén y desliza para ver tus ventanas.": "Try it: tap to go back to the previous window, or hold and slide to flip through them.",
+"Lo que tienes delante": "What's in front of you",
+"Muestra la app activa y sus botones cambian según lo que uses. Tócala para ver la pantalla del PC.": "Shows the active app, and its buttons change with what you use. Tap it to see the PC screen.",
+"Pruébalo: mantén y desliza hasta una opción. TV, volumen, escritorio, teclado y energía.": "Try it: hold and slide to an option. TV, volume, desktop, keyboard and power.",
+"A tu medida": "Make it yours",
+"Mantén la barrita un momento y arrástrala hacia abajo para acercarlo todo a tu pulgar. Si dudas, mantén pulsado un botón para ver su nombre.": "Hold the little bar for a moment and drag it down to bring everything closer to your thumb. Not sure what a button does? Hold it to see its name.",
+"{0} de {1}": "{0} of {1}",
+"Saltar": "Skip",
+"Empezar": "Start",
+"¡Eso es!": "That's it!",
+"1 dedo: mover · toque: clic<br>2 dedos: desplazar · toque con 2: clic derecho<br>borde derecho: desplazar · pellizco: zoom": "1 finger: move · tap: click<br>2 fingers: scroll · 2-finger tap: right click<br>right edge: scroll · pinch: zoom"
+};
+function tr(s, ...a){
+  const r = LANG === "en" ? (EN[s] ?? s) : s;
+  return a.length ? r.replace(/\{(\d)\}/g, (_, i) => a[i]) : r;
+}
+function translateStatic(){
+  document.querySelectorAll("[aria-label]").forEach(el => el.setAttribute("aria-label", tr(el.getAttribute("aria-label"))));
+  for (const id of ["statusText", "scrName", "scrmsg"]){ const el = document.getElementById(id); el.textContent = tr(el.textContent); }
+  $("#scrimg").alt = tr($("#scrimg").alt);
+  if (LANG === "en") $("#hint").innerHTML = EN[$("#hint").innerHTML.trim()] || $("#hint").innerHTML;
+}
 // Vibraciones: cada acción tiene su patrón para reconocerla sin mirar el móvil
 // (número = vibrar N ms; lista = vibrar, pausa, vibrar…)
 const HAP = {
@@ -657,10 +843,10 @@ let ws = null, retry = 0, fatal = false, wasOn = false, CFG = {apps:[], shortcut
 function setStatus(txt, on){ $("#statusText").textContent = txt; $("#dot").classList.toggle("on", !!on); }
 function connect(){
   if (fatal) return;
-  setStatus("Conectando…", false);
+  setStatus(tr("Conectando…"), false);
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(`${proto}://${location.host}/ws?k=${encodeURIComponent(token)}`);
-  ws.onopen = () => { retry = 0; wasOn = true; setStatus("Conectado", true); loadConfig(); if (S.halo) send({t:"halo", on:true}); };
+  ws.onopen = () => { retry = 0; wasOn = true; setStatus(tr("Conectado"), true); loadConfig(); if (S.halo) send({t:"halo", on:true}); };
   ws.onmessage = e => { try {
     const m = JSON.parse(e.data);
     if (m.t === "win") setWindow(m);
@@ -669,9 +855,9 @@ function connect(){
     else if (m.t === "vol") onVol(m);
   } catch(err){} };
   ws.onclose = e => {
-    if (e.code === 4001){ fatal = true; setStatus("Código incorrecto: escanea de nuevo el QR del PC", false); return; }
+    if (e.code === 4001){ fatal = true; setStatus(tr("Código incorrecto: escanea de nuevo el QR del PC"), false); return; }
     if (wasOn){ wasOn = false; buzz(HAP.error); }
-    setStatus("Sin conexión, reintentando…", false);
+    setStatus(tr("Sin conexión, reintentando…"), false);
     setTimeout(connect, Math.min(4000, 400 * (++retry)));
   };
 }
@@ -683,7 +869,7 @@ document.addEventListener("visibilitychange", () => {
 function loadConfig(){
   fetch(`/config?k=${encodeURIComponent(token)}`).then(r => r.json()).then(c => {
     CFG = c;
-    if (c.host) setStatus("Conectado · " + c.host, true);
+    if (c.host) setStatus(tr("Conectado") + " · " + c.host, true);
   }).catch(() => {});
 }
 
@@ -744,22 +930,22 @@ function iconBtn(label, icon, fn, cls = "btn"){
 const APPS = {
   "chrome.exe":["Chrome","browser"], "msedge.exe":["Edge","browser"], "firefox.exe":["Firefox","browser"], "brave.exe":["Brave","browser"],
   "opera.exe":["Opera","browser"], "vivaldi.exe":["Vivaldi","browser"], "spotify.exe":["Spotify","media"], "vlc.exe":["VLC","media"],
-  "wmplayer.exe":["Reproductor","media"], "applemusic.exe":["Música","media"], "powerpnt.exe":["PowerPoint","slides"],
-  "winword.exe":["Word","docs"], "excel.exe":["Excel","docs"], "notepad.exe":["Bloc de notas","docs"], "code.exe":["VS Code","docs"],
-  "explorer.exe":["Explorador","files"], "desktop":["Escritorio","desktop"],
+  "wmplayer.exe":[tr("Reproductor"),"media"], "applemusic.exe":[tr("Música"),"media"], "powerpnt.exe":["PowerPoint","slides"],
+  "winword.exe":["Word","docs"], "excel.exe":["Excel","docs"], "notepad.exe":[tr("Bloc de notas"),"docs"], "code.exe":["VS Code","docs"],
+  "explorer.exe":[tr("Explorador"),"files"], "desktop":[tr("Escritorio"),"desktop"],
   "stremio.exe":["Stremio","stremio"], "stremio-shell-ng.exe":["Stremio","stremio"],
 };
 const CAT_ICON = {stremio:"tv", browser:"globe", media:"music", slides:"present", files:"folder", docs:"doc", desktop:"desk", default:"window"};
 const SMART = {
-  browser:[["Atrás","back","alt+left"],["Recargar","reload","f5"],["Nueva pestaña","plus","ctrl+t"],["Buscar en la página","search","ctrl+f"]],
-  media:[["Anterior","prev","prev"],["Reproducir o pausar","playpause","play_pause"],["Siguiente","next","next"],["Silenciar","mute","mute"]],
-  slides:[["Diapositiva anterior","back","left"],["Iniciar presentación","present","f5"],["Diapositiva siguiente","fwd","right"],["Terminar presentación","close","esc"]],
-  files:[["Atrás","back","alt+left"],["Carpeta superior","up","alt+up"],["Nueva carpeta","folderplus","ctrl+shift+n"],["Cambiar nombre","rename","f2"]],
-  docs:[["Copiar","copy","ctrl+c"],["Pegar","paste","ctrl+v"],["Deshacer","undo","ctrl+z"],["Guardar","save","ctrl+s"]],
-  stremio:[["Retroceder","rew","left"],["Reproducir o pausar","playpause","space"],["Avanzar","ffw","right"],["Pantalla completa","fit","f"]],
-  webmedia:[["Retroceder","rew","left"],["Reproducir o pausar","playpause","play_pause"],["Avanzar","ffw","right"],["Pantalla completa","fit","f"]],
-  desktop:[["Explorador de archivos","folder","win+e"],["Buscar en el PC","search","win+s"],["Vista de tareas","tasks","win+tab"],["Configuración de Windows","gear","win+i"]],
-  default:[["Copiar","copy","ctrl+c"],["Pegar","paste","ctrl+v"],["Deshacer","undo","ctrl+z"],["Seleccionar todo","selectall","ctrl+a"]],
+  browser:[[tr("Atrás"),"back","alt+left"],[tr("Recargar"),"reload","f5"],[tr("Nueva pestaña"),"plus","ctrl+t"],[tr("Buscar en la página"),"search","ctrl+f"]],
+  media:[[tr("Anterior"),"prev","prev"],[tr("Reproducir o pausar"),"playpause","play_pause"],[tr("Siguiente"),"next","next"],[tr("Silenciar"),"mute","mute"]],
+  slides:[[tr("Diapositiva anterior"),"back","left"],[tr("Iniciar presentación"),"present","f5"],[tr("Diapositiva siguiente"),"fwd","right"],[tr("Terminar presentación"),"close","esc"]],
+  files:[[tr("Atrás"),"back","alt+left"],[tr("Carpeta superior"),"up","alt+up"],[tr("Nueva carpeta"),"folderplus","ctrl+shift+n"],[tr("Cambiar nombre"),"rename","f2"]],
+  docs:[[tr("Copiar"),"copy","ctrl+c"],[tr("Pegar"),"paste","ctrl+v"],[tr("Deshacer"),"undo","ctrl+z"],[tr("Guardar"),"save","ctrl+s"]],
+  stremio:[[tr("Retroceder"),"rew","left"],[tr("Reproducir o pausar"),"playpause","space"],[tr("Avanzar"),"ffw","right"],[tr("Pantalla completa"),"fit","f"]],
+  webmedia:[[tr("Retroceder"),"rew","left"],[tr("Reproducir o pausar"),"playpause","play_pause"],[tr("Avanzar"),"ffw","right"],[tr("Pantalla completa"),"fit","f"]],
+  desktop:[[tr("Explorador de archivos"),"folder","win+e"],[tr("Buscar en el PC"),"search","win+s"],[tr("Vista de tareas"),"tasks","win+tab"],[tr("Configuración de Windows"),"gear","win+i"]],
+  default:[[tr("Copiar"),"copy","ctrl+c"],[tr("Pegar"),"paste","ctrl+v"],[tr("Deshacer"),"undo","ctrl+z"],[tr("Seleccionar todo"),"selectall","ctrl+a"]],
 };
 const badIcons = new Set();
 let WIN = {title:"", exe:""};
@@ -798,7 +984,7 @@ function renderCard(){
     setAppIcon(c);
     if (!first){ replay($("#appIcon"), "swap"); replay($(".appmeta"), "swap"); }
   }
-  $("#cardMain").setAttribute("aria-label", `${c.name}: ver la pantalla del PC`);
+  $("#cardMain").setAttribute("aria-label", tr("{0}: ver la pantalla del PC", c.name));
   $("#card").classList.toggle("desk", c.cat === "desktop");
   syncScrTitle();
   renderSmart($("#smart"), c.set);
@@ -825,7 +1011,7 @@ function initCard(){
   onTap($("#wClose"), () => {
     const b = $("#wClose");
     if (closeArmed){ clearTimeout(closeArmed); closeArmed = null; b.classList.remove("armed"); send({t:"wnd", a:"close"}); buzz(HAP.close); return; }
-    b.classList.add("armed"); buzz(HAP.warn); showTip(b, "Toca otra vez para cerrar");
+    b.classList.add("armed"); buzz(HAP.warn); showTip(b, tr("Toca otra vez para cerrar"));
     closeArmed = setTimeout(() => { closeArmed = null; b.classList.remove("armed"); hideTip(); }, 2000);
   });
   renderCard();
@@ -985,15 +1171,15 @@ function initClicks(){
 /* ================================================================ menú radial */
 const ACTIONS = {
   apps:  {label:"TV", icon:"tv", run:() => openTV()},
-  vol:   {label:"Volumen", icon:"vol", run:() => toggleMute()},
-  desk:  {label:"Escritorio", icon:"desk", run:() => sendKeys("win+d")},
-  kbd:   {label:"Teclado", icon:"kbd", run:() => openKeyboard()},
-  media: {label:"Reproducir o pausar", icon:"playpause", run:() => sendKeys("play_pause")},
-  tasks: {label:"Vista de tareas", icon:"tasks", run:() => sendKeys("win+tab")},
-  shot:  {label:"Captura de pantalla", icon:"shot", run:() => sendKeys("win+shift+s")},
-  screen:{label:"Ver pantalla", icon:"cast", run:() => openScreen()},
-  lock:  {label:"Bloquear el PC", icon:"lock", run:() => send({t:"power", a:"lock"})},
-  power: {label:"Energía", icon:"power", run:() => openPower()},
+  vol:   {label:tr("Volumen"), icon:"vol", run:() => toggleMute()},
+  desk:  {label:tr("Escritorio"), icon:"desk", run:() => sendKeys("win+d")},
+  kbd:   {label:tr("Teclado"), icon:"kbd", run:() => openKeyboard()},
+  media: {label:tr("Reproducir o pausar"), icon:"playpause", run:() => sendKeys("play_pause")},
+  tasks: {label:tr("Vista de tareas"), icon:"tasks", run:() => sendKeys("win+tab")},
+  shot:  {label:tr("Captura de pantalla"), icon:"shot", run:() => sendKeys("win+shift+s")},
+  screen:{label:tr("Ver pantalla"), icon:"cast", run:() => openScreen()},
+  lock:  {label:tr("Bloquear el PC"), icon:"lock", run:() => send({t:"power", a:"lock"})},
+  power: {label:tr("Energía"), icon:"power", run:() => openPower()},
 };
 const RAD = {open:false, mode:null, hot:null, items:[], moved:false, sx:0, sy:0, volY:null, volSteps:0, cx:0, cy:0};
 const radial = $("#radial"), fab = $("#fab");
@@ -1129,7 +1315,7 @@ function closeSheet(){ if (CARET) setTimeout(() => onCaret(true), 350); clearInt
 
 /* ---------------- sección TV */
 const TV_CATALOG = [
-  {name:"Navegador", kind:"browser"},
+  {name:tr("Navegador"), kind:"browser"},
   {name:"YouTube", url:"https://www.youtube.com"}, {name:"Netflix", url:"https://www.netflix.com"},
   {name:"Prime Video", url:"https://www.primevideo.com"}, {name:"Disney+", url:"https://www.disneyplus.com"},
   {name:"Max", url:"https://play.max.com"}, {name:"Movistar Plus+", url:"https://ver.movistarplus.es"},
@@ -1144,7 +1330,7 @@ const TV = {editing:false, view:"grid"};
 const tvKey = it => it.kind === "browser" ? "browser" : (it.url || "").replace(/^https?:\/\/(www\.)?/i, "").replace(/\/+$/, "").toLowerCase();
 function tvName(it){
   if (it.kind === "browser" && CFG.browser && APPS[CFG.browser]) return APPS[CFG.browser][0];
-  return it.name;
+  return it.kind === "browser" ? tr(it.name) : it.name;
 }
 function tvIcon(it){
   const box = document.createElement("span"); box.className = "ti";
@@ -1171,7 +1357,7 @@ function tvTile(it, i){
   const nm = document.createElement("span"); nm.className = "tn"; nm.textContent = tvName(it);
   b.append(tvIcon(it), nm);
   const del = document.createElement("span"); del.className = "del"; del.setAttribute("role", "button");
-  del.setAttribute("aria-label", "Quitar " + tvName(it)); del.innerHTML = svg("close", 16, 2.6);
+  del.setAttribute("aria-label", tr("Quitar {0}", tvName(it))); del.innerHTML = svg("close", 16, 2.6);
   b.appendChild(del);
   let lp = null, long = false;
   b.addEventListener("touchstart", () => { long = false; lp = setTimeout(() => { long = true; if (!TV.editing){ TV.editing = true; buzz(HAP.grab); renderTV(); } }, 500); }, {passive:true});
@@ -1193,48 +1379,48 @@ function renderTV(){
   sheet.classList.toggle("editing", TV.editing && TV.view === "grid");
   const close = $("#sheetClose");
   if (TV.view === "add"){
-    $("#sheetTitle").textContent = "Añadir a TV";
-    const back = document.createElement("button"); back.className = "backrow"; back.innerHTML = svg("chevleft", 18, 2.2) + "<span>Volver</span>";
+    $("#sheetTitle").textContent = tr("Añadir a TV");
+    const back = document.createElement("button"); back.className = "backrow"; back.innerHTML = svg("chevleft", 18, 2.2) + `<span>${tr("Volver")}</span>`;
     back.addEventListener("click", () => { TV.view = "grid"; renderTV(); }); body.appendChild(back);
     const have = new Set((CFG.tv || []).map(tvKey));
     const cat = document.createElement("div"); cat.className = "cat";
     TV_CATALOG.filter(it => !have.has(tvKey(it))).forEach(it => {
-      const b = document.createElement("button"); b.className = "btn tile"; b.setAttribute("aria-label", "Añadir " + tvName(it));
+      const b = document.createElement("button"); b.className = "btn tile"; b.setAttribute("aria-label", tr("Añadir {0}", tvName(it)));
       const nm = document.createElement("span"); nm.className = "tn"; nm.textContent = tvName(it);
       b.append(tvIcon(it), nm);
       b.addEventListener("click", () => { saveTV([...(CFG.tv || []), it]); buzz(HAP.select); TV.view = "grid"; renderTV(); });
       cat.appendChild(b);
     });
-    if (!cat.children.length) cat.innerHTML = `<div style="grid-column:1/-1;color:var(--muted)">Ya tienes todas las del catálogo.</div>`;
+    if (!cat.children.length) cat.innerHTML = `<div style="grid-column:1/-1;color:var(--muted)">${tr("Ya tienes todas las del catálogo.")}</div>`;
     body.appendChild(cat);
-    const h = document.createElement("div"); h.className = "sect"; h.textContent = "Otra web"; body.appendChild(h);
+    const h = document.createElement("div"); h.className = "sect"; h.textContent = tr("Otra web"); body.appendChild(h);
     const f = document.createElement("form"); f.className = "form";
-    f.innerHTML = `<input name="n" placeholder="Nombre" aria-label="Nombre" maxlength="40" autocomplete="off">
-      <input name="u" placeholder="Dirección, p. ej. filmin.es" aria-label="Dirección web" inputmode="url" autocomplete="off" autocapitalize="off">
-      <button class="btn wide" type="submit">Añadir</button>`;
+    f.innerHTML = `<input name="n" placeholder="${tr("Nombre")}" aria-label="${tr("Nombre")}" maxlength="40" autocomplete="off">
+      <input name="u" placeholder="${tr("Dirección, p. ej. filmin.es")}" aria-label="${tr("Dirección web")}" inputmode="url" autocomplete="off" autocapitalize="off">
+      <button class="btn wide" type="submit">${tr("Añadir")}</button>`;
     f.addEventListener("submit", e => {
       e.preventDefault();
       let u = f.u.value.trim(); if (!u) return;
       if (!/^https?:\/\//i.test(u)) u = "https://" + u;
-      let host; try { host = new URL(u).hostname; } catch(err){ toast("Esa dirección no parece válida"); return; }
+      let host; try { host = new URL(u).hostname; } catch(err){ toast(tr("Esa dirección no parece válida")); return; }
       const n = f.n.value.trim() || host.replace(/^www\./, "");
       saveTV([...(CFG.tv || []), {name:n, url:u}]); buzz(HAP.select); TV.view = "grid"; renderTV();
     });
     body.appendChild(f);
     return;
   }
-  $("#sheetTitle").textContent = TV.editing ? "Editar TV" : "TV";
+  $("#sheetTitle").textContent = TV.editing ? tr("Editar TV") : "TV";
   const grid = document.createElement("div"); grid.className = "tvgrid";
   (CFG.tv || []).forEach((it, i) => grid.appendChild(tvTile(it, i)));
-  const add = document.createElement("button"); add.className = "btn tile add"; add.setAttribute("aria-label", "Añadir");
-  add.innerHTML = `<span class="ti">${svg("plus", 26, 2)}</span><span class="tn">Añadir</span>`;
+  const add = document.createElement("button"); add.className = "btn tile add"; add.setAttribute("aria-label", tr("Añadir"));
+  add.innerHTML = `<span class="ti">${svg("plus", 26, 2)}</span><span class="tn">${tr("Añadir")}</span>`;
   add.addEventListener("click", () => { buzz(HAP.press); TV.view = "add"; renderTV(); });
   grid.appendChild(add); body.appendChild(grid);
   const hint = document.createElement("div"); hint.className = "tvhint";
-  hint.textContent = TV.editing ? "Toca la ✕ para quitar. Pulsa Listo al terminar." : "Mantén pulsado para editar";
+  hint.textContent = TV.editing ? tr("Toca la ✕ para quitar. Pulsa Listo al terminar.") : tr("Mantén pulsado para editar");
   body.appendChild(hint);
   if (TV.editing){
-    const done = document.createElement("button"); done.className = "btn wide"; done.textContent = "Listo";
+    const done = document.createElement("button"); done.className = "btn wide"; done.textContent = tr("Listo");
     done.addEventListener("click", () => { TV.editing = false; buzz(HAP.drop); renderTV(); }); body.appendChild(done);
   }
 }
@@ -1245,16 +1431,16 @@ function openTV(){
 
 /* ---------------- energía: bloquear, suspender, reiniciar, apagar */
 const POWER = [
-  {a:"lock",     label:"Bloquear",  icon:"lock",    hold:false},
-  {a:"sleep",    label:"Suspender", icon:"moon",    hold:true},
-  {a:"restart",  label:"Reiniciar", icon:"reload",  hold:true},
-  {a:"shutdown", label:"Apagar",    icon:"power",   hold:true, danger:true},
+  {a:"lock",     label:tr("Bloquear"),  icon:"lock",    hold:false},
+  {a:"sleep",    label:tr("Suspender"), icon:"moon",    hold:true},
+  {a:"restart",  label:tr("Reiniciar"), icon:"reload",  hold:true},
+  {a:"shutdown", label:tr("Apagar"),    icon:"power",   hold:true, danger:true},
 ];
 const HOLD_MS = 900;
 let pwTimer = null;
 function openPower(){
   clearInterval(pwTimer);
-  openSheet("Energía", body => renderPower(body));
+  openSheet(tr("Energía"), body => renderPower(body));
 }
 function renderPower(body){
   body.innerHTML = "";
@@ -1262,10 +1448,10 @@ function renderPower(body){
   for (const p of POWER){
     const b = document.createElement("button");
     b.className = "btn ptile" + (p.danger ? " danger" : "");
-    b.setAttribute("aria-label", p.hold ? `${p.label} (mantén pulsado)` : p.label);
+    b.setAttribute("aria-label", p.hold ? tr("{0} (mantén pulsado)", p.label) : p.label);
     b.innerHTML = `<span class="fill"></span>${svg(p.icon, 28)}<span>${p.label}</span>`;
     if (!p.hold){
-      b.addEventListener("click", () => { buzz(HAP.select); send({t:"power", a:p.a}); closeSheet(); toast("PC bloqueado"); });
+      b.addEventListener("click", () => { buzz(HAP.select); send({t:"power", a:p.a}); closeSheet(); toast(tr("PC bloqueado")); });
     } else {
       let raf = null, t0 = 0, done = false;
       const fill = b.querySelector(".fill");
@@ -1277,7 +1463,7 @@ function renderPower(body){
         raf = requestAnimationFrame(step);
       };
       b.addEventListener("touchstart", e => { e.preventDefault(); done = false; t0 = performance.now(); b.classList.add("holding"); buzz(HAP.tick); raf = requestAnimationFrame(step); }, {passive:false});
-      b.addEventListener("touchend", e => { e.preventDefault(); if (!done && raf) toast("Mantén pulsado para confirmar"); stop(); }, {passive:false});
+      b.addEventListener("touchend", e => { e.preventDefault(); if (!done && raf) toast(tr("Mantén pulsado para confirmar")); stop(); }, {passive:false});
       b.addEventListener("touchcancel", stop);
       b.addEventListener("contextmenu", e => e.preventDefault());
       // con ratón (pruebas en el ordenador)
@@ -1288,43 +1474,43 @@ function renderPower(body){
   }
   body.appendChild(grid);
   const hint = document.createElement("div"); hint.className = "tvhint";
-  hint.textContent = "Mantén pulsado para suspender, reiniciar o apagar";
+  hint.textContent = tr("Mantén pulsado para suspender, reiniciar o apagar");
   body.appendChild(hint);
 }
 function confirmPower(p){
   buzz(HAP.close);
   send({t:"power", a:p.a});
-  if (p.a === "sleep"){ closeSheet(); toast("Suspendiendo el PC…"); return; }
+  if (p.a === "sleep"){ closeSheet(); toast(tr("Suspendiendo el PC…")); return; }
   // reiniciar / apagar: cuenta atrás con opción de cancelar
   const body = $("#sheetBody"); body.innerHTML = "";
-  const verb = p.a === "restart" ? "Reiniciando" : "Apagando";
+  const verb = tr(p.a === "restart" ? tr("Reiniciando") : tr("Apagando"));
   const box = document.createElement("div"); box.className = "pcount";
   box.innerHTML = `${svg(p.icon, 40)}<div class="pc-t"></div>`;
-  const cancel = document.createElement("button"); cancel.className = "btn wide"; cancel.textContent = "Cancelar";
+  const cancel = document.createElement("button"); cancel.className = "btn wide"; cancel.textContent = tr("Cancelar");
   body.append(box, cancel);
   let left = 10;
-  const tick = () => { box.querySelector(".pc-t").textContent = `${verb} el PC en ${left} s`; };
+  const tick = () => { box.querySelector(".pc-t").textContent = tr("{0} el PC en {1} s", verb, left); };
   tick();
   pwTimer = setInterval(() => { left--; if (left <= 0){ clearInterval(pwTimer); box.querySelector(".pc-t").textContent = `${verb}…`; setTimeout(closeSheet, 1200); } else tick(); }, 1000);
-  cancel.addEventListener("click", () => { clearInterval(pwTimer); send({t:"power", a:"cancel"}); buzz(HAP.select); toast(p.a === "restart" ? "Reinicio cancelado" : "Apagado cancelado"); closeSheet(); });
+  cancel.addEventListener("click", () => { clearInterval(pwTimer); send({t:"power", a:"cancel"}); buzz(HAP.select); toast(tr(p.a === "restart" ? tr("Reinicio cancelado") : tr("Apagado cancelado"))); closeSheet(); });
 }
 
 function openKeyboard(){
-  openSheet("Teclado", body => {
+  openSheet(tr("Teclado"), body => {
     const ta = document.createElement("textarea");
-    ta.id = "txt"; ta.setAttribute("aria-label", "Texto para enviar al PC"); ta.setAttribute("enterkeyhint", "send");
+    ta.id = "txt"; ta.setAttribute("aria-label", tr("Texto para enviar al PC")); ta.setAttribute("enterkeyhint", "send");
     body.appendChild(ta);
     const sendTxt = enter => { if (!ta.value && !enter) return; send({t:"txt", s:ta.value, enter}); ta.value = ""; buzz(12); };
     ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); sendTxt(true); } });
     const keep = b => { b.addEventListener("pointerdown", e => e.preventDefault()); b.addEventListener("mousedown", e => e.preventDefault()); return b; };
     const row = document.createElement("div"); row.className = "txtrow";
-    row.append(keep(iconBtn("Enviar texto", "send", () => sendTxt(false))), keep(iconBtn("Enviar y pulsar Intro", "enter", () => sendTxt(true))),
-               keep(iconBtn("Borrar texto", "clear", () => { ta.value = ""; })));
+    row.append(keep(iconBtn(tr("Enviar texto"), "send", () => sendTxt(false))), keep(iconBtn(tr("Enviar y pulsar Intro"), "enter", () => sendTxt(true))),
+               keep(iconBtn(tr("Borrar texto"), "clear", () => { ta.value = ""; })));
     body.appendChild(row);
     const keys = document.createElement("div"); keys.className = "keys";
-    for (const [sym, label, k] of [["⎋","Esc","esc"],["⇥","Tab","tab"],["⌫","Retroceso","backspace"],["⌦","Suprimir","delete"],["⏎","Intro","enter"],
-                                   ["⇱","Inicio","home"],["←","Izquierda","left"],["↑","Arriba","up"],["↓","Abajo","down"],["→","Derecha","right"],
-                                   ["⇲","Fin","end"],["␣","Espacio","space"],["⇞","Re Pág","pgup"],["⇟","Av Pág","pgdn"],["⊞","Windows","win"]]){
+    for (const [sym, label, k] of [["⎋","Esc","esc"],["⇥","Tab","tab"],["⌫",tr("Retroceso"),"backspace"],["⌦",tr("Suprimir"),"delete"],["⏎",tr("Intro"),"enter"],
+                                   ["⇱",tr("Inicio"),"home"],["←",tr("Izquierda"),"left"],["↑",tr("Arriba"),"up"],["↓",tr("Abajo"),"down"],["→",tr("Derecha"),"right"],
+                                   ["⇲",tr("Fin"),"end"],["␣",tr("Espacio"),"space"],["⇞",tr("Re Pág"),"pgup"],["⇟",tr("Av Pág"),"pgdn"],["⊞","Windows","win"]]){
       const b = document.createElement("button"); b.className = "btn"; b.textContent = sym; b.setAttribute("aria-label", label);
       keep(b); onTap(b, () => sendKeys(k)); keys.appendChild(b);
     }
@@ -1334,7 +1520,7 @@ function openKeyboard(){
 }
 
 function openSettings(){
-  openSheet("Ajustes", body => {
+  openSheet(tr("Ajustes"), body => {
     const sect = t => { const h = document.createElement("div"); h.className = "sect"; h.textContent = t; body.appendChild(h); };
     const range = (label, key, min, max, step, fmt = v => (+v).toFixed(1)) => {
       // El valor solo cambia si el dedo se mueve en horizontal: deslizar en vertical desplaza la hoja
@@ -1391,62 +1577,65 @@ function openSettings(){
       body.appendChild(s);
     };
 
-    sect("Conexión");
+    sect(tr("Conexión"));
     const st = document.createElement("div"); st.className = "row";
-    st.innerHTML = `<span></span>`; st.firstChild.textContent = ws && ws.readyState === 1 ? `Conectado a ${CFG.host || "tu PC"}` : "Sin conexión";
+    st.innerHTML = `<span></span>`; st.firstChild.textContent = ws && ws.readyState === 1 ? tr("Conectado a {0}", CFG.host || tr("tu PC")) : tr("Sin conexión");
     body.appendChild(st);
-    const rec = document.createElement("button"); rec.className = "btn wide"; rec.textContent = "Reconectar";
+    const rec = document.createElement("button"); rec.className = "btn wide"; rec.textContent = tr("Reconectar");
     rec.addEventListener("click", () => { try { ws && ws.close(); } catch(e){} fatal = false; retry = 0; connect(); closeSheet(); });
     body.appendChild(rec);
-    const forget = document.createElement("button"); forget.className = "btn wide"; forget.textContent = "Olvidar este PC";
-    forget.addEventListener("click", () => { save("mando.token", ""); toast("Escanea el QR del PC para volver a conectar"); });
+    const forget = document.createElement("button"); forget.className = "btn wide"; forget.textContent = tr("Olvidar este PC");
+    forget.addEventListener("click", () => { save("mando.token", ""); toast(tr("Escanea el QR del PC para volver a conectar")); });
     body.appendChild(forget);
 
     sect("Trackpad");
-    range("Sensibilidad", "sens", 0.5, 4, 0.1);
-    range("Aceleración", "accel", 0, 3, 0.1);
-    toggle("Desplazamiento natural", "natural");
-    toggle("Inercia", "inertia");
-    range("Sensibilidad del dial", "dialSens", 1, 5, 1, v => ["","Baja","","Media","","Alta"][v] || String(v));
-    const sideLab = document.createElement("div"); sideLab.className = "row"; sideLab.textContent = "Trackpad con el móvil en horizontal"; body.appendChild(sideLab);
-    seg("padSide", [["left","Izquierda","padleft"],["right","Derecha","padright"]], applyTheme);
+    range(tr("Sensibilidad"), "sens", 0.5, 4, 0.1);
+    range(tr("Aceleración"), "accel", 0, 3, 0.1);
+    toggle(tr("Desplazamiento natural"), "natural");
+    toggle(tr("Inercia"), "inertia");
+    range(tr("Sensibilidad del dial"), "dialSens", 1, 5, 1, v => ["",tr("Baja"),"",tr("Media"),"",tr("Alta")][v] || String(v));
+    const sideLab = document.createElement("div"); sideLab.className = "row"; sideLab.textContent = tr("Trackpad con el móvil en horizontal"); body.appendChild(sideLab);
+    seg("padSide", [["left",tr("Izquierda"),"padleft"],["right",tr("Derecha"),"padright"]], applyTheme);
 
-    sect("En el PC");
-    toggle("Resaltar el cursor para verlo de lejos", "halo", () => send({t:"halo", on:S.halo}));
+    sect(tr("En el PC"));
+    toggle(tr("Resaltar el cursor para verlo de lejos"), "halo", () => send({t:"halo", on:S.halo}));
 
-    sect("Apariencia");
-    const themes = [["auto","Auto","themeauto"],["dark","Oscuro","moon"],["aero","Claro","sun"]];
+    sect(tr("Idioma"));
+    seg("lang", [["auto","Auto"],["en","English"],["es","Español"]], () => setTimeout(() => location.reload(), 150));
+
+    sect(tr("Apariencia"));
+    const themes = [["auto","Auto","themeauto"],["dark",tr("Oscuro"),"moon"],["aero",tr("Claro"),"sun"]];
     if (S.xp) themes.push(["xp","Luna","sparkle"]);
     seg("theme", themes, applyTheme);
-    if (canFs) toggle("Pantalla completa automática", "autoFs", () => { if (S.autoFs) goFs(); });
+    if (canFs) toggle(tr("Pantalla completa automática"), "autoFs", () => { if (S.autoFs) goFs(); });
 
-    sect("Vibración");
+    sect(tr("Vibración"));
     const note = t => { const n = document.createElement("div"); n.className = "note"; n.textContent = t; body.appendChild(n); };
     if (!navigator.vibrate){
-      note("Este navegador no permite que la página haga vibrar el móvil.");
+      note(tr("Este navegador no permite que la página haga vibrar el móvil."));
     } else {
-      toggle("Vibración", "haptic");
-      seg("hapStr", [[0.7,"Suave"],[1,"Media"],[1.6,"Fuerte"]], () => buzz(HAP.select));
-      const tb = document.createElement("button"); tb.className = "btn wide"; tb.textContent = "Probar vibración";
+      toggle(tr("Vibración"), "haptic");
+      seg("hapStr", [[0.7,tr("Suave")],[1,tr("Media")],[1.6,tr("Fuerte")]], () => buzz(HAP.select));
+      const tb = document.createElement("button"); tb.className = "btn wide"; tb.textContent = tr("Probar vibración");
       tb.addEventListener("click", () => buzz([60, 80, 60])); body.appendChild(tb);
-      note("¿No notas nada? Revisa que el móvil no esté en silencio, en No molestar o en ahorro de batería, y que la vibración táctil esté activada en sus ajustes.");
+      note(tr("¿No notas nada? Revisa que el móvil no esté en silencio, en No molestar o en ahorro de batería, y que la vibración táctil esté activada en sus ajustes."));
     }
 
-    sect("Pantalla y escritura");
-    seg("quality", [["low","Fluida"],["mid","Media"],["high","Nítida"]]);
-    toggle("Ofrecer el teclado al escribir en el PC", "autoKbd", () => onCaret(CARET));
+    sect(tr("Pantalla y escritura"));
+    seg("quality", [["low",tr("Fluida")],["mid",tr("Media")],["high",tr("Nítida")]]);
+    toggle(tr("Ofrecer el teclado al escribir en el PC"), "autoKbd", () => onCaret(CARET));
 
-    sect("Ayuda");
-    const tutB = document.createElement("button"); tutB.className = "btn wide"; tutB.textContent = "Ver el tutorial";
+    sect(tr("Ayuda"));
+    const tutB = document.createElement("button"); tutB.className = "btn wide"; tutB.textContent = tr("Ver el tutorial");
     tutB.addEventListener("click", () => startTutorial()); body.appendChild(tutB);
 
     const about = document.createElement("div"); about.className = "about"; about.textContent = `Mando PC · v${VERSION}`;
     let taps = 0, tapT;
     about.addEventListener("click", () => {
       taps++; clearTimeout(tapT); tapT = setTimeout(() => taps = 0, 2500);
-      if (S.xp){ if (taps === 1) toast("El tema Luna ya está desbloqueado"); return; }
-      if (taps >= 3 && taps < 7){ toast(`Te faltan ${7 - taps} toques`); buzz(6); }
-      if (taps >= 7){ S.xp = true; S.theme = "xp"; saveS(); applyTheme(); buzz(HAP.unlock); toast("Tema Luna desbloqueado"); openSettings(); }
+      if (S.xp){ if (taps === 1) toast(tr("El tema Luna ya está desbloqueado")); return; }
+      if (taps >= 3 && taps < 7){ toast(tr("Te faltan {0} toques", 7 - taps)); buzz(6); }
+      if (taps >= 7){ S.xp = true; S.theme = "xp"; saveS(); applyTheme(); buzz(HAP.unlock); toast(tr("Tema Luna desbloqueado")); openSettings(); }
     });
     body.appendChild(about);
   });
@@ -1478,11 +1667,11 @@ function bindStrip(el){
 const SV = {open:false, s:1, tx:0, ty:0, nat:{w:16, h:9}, url:null, loop:0, G:null, holdT:null, loupe:null};
 const wrap = $("#stagewrap"), stage = $("#stage"), simg = $("#scrimg"), loupe = $("#loupe");
 function openScreen(){
-  if (!CFG.screen){ toast("La vista de pantalla necesita mss y Pillow en el PC"); return; }
+  if (!CFG.screen){ toast(tr("La vista de pantalla necesita mss y Pillow en el PC")); return; }
   closeRadial(); closeSheet();
   syncScrTitle();
   $("#screen").classList.add("open"); SV.open = true; SV.s = 1; SV.tx = 0; SV.ty = 0; applyStage();
-  $("#scrmsg").textContent = "Cargando…";
+  $("#scrmsg").textContent = tr("Cargando…");
   frameLoop(++SV.loop);
 }
 function closeScreen(){
@@ -1501,7 +1690,7 @@ async function frameLoop(id){
       if (SV.url) URL.revokeObjectURL(SV.url);
       SV.url = u; SV.nat = {w:simg.naturalWidth, h:simg.naturalHeight};
       $("#scrmsg").textContent = "";
-    } catch(e){ $("#scrmsg").textContent = "No se pudo obtener la pantalla del PC"; await sleep(1500); }
+    } catch(e){ $("#scrmsg").textContent = tr("No se pudo obtener la pantalla del PC"); await sleep(1500); }
     await sleep(Math.max(0, 110 - (performance.now() - t0)));
   }
 }
@@ -1555,7 +1744,7 @@ function initScreen(){
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       const land = screen.orientation && screen.orientation.type.startsWith("landscape");
       await screen.orientation.lock(land ? "portrait" : "landscape");
-    } catch(e){ toast("Gira el móvil para verla en horizontal"); }
+    } catch(e){ toast(tr("Gira el móvil para verla en horizontal")); }
   });
 
   wrap.addEventListener("touchstart", e => {
@@ -1664,7 +1853,7 @@ function initReach(){
     if (armed){ saveS(); buzz(HAP.drop); if (tutOn()) setTimeout(() => showStep(tutI, true), 80); }
     else if (Math.abs(yl - ys) < 12){                  // doble toque: tamaño completo
       const n = Date.now();
-      if (n - lastTap < 350 && (land ? S.reachL : S.reach)){ if (land) S.reachL = 0; else S.reach = 0; applyReach(); saveS(); toast("Trackpad a tamaño normal"); }
+      if (n - lastTap < 350 && (land ? S.reachL : S.reach)){ if (land) S.reachL = 0; else S.reach = 0; applyReach(); saveS(); toast(tr("Trackpad a tamaño normal")); }
       lastTap = n;
     }
     armed = false;
@@ -1736,7 +1925,7 @@ function onCaret(on){
 }
 function initKbdChip(){
   const chip = $("#kbdchip");
-  chip.innerHTML = svg("kbd", 22) + "<span>Escribir</span>";
+  chip.innerHTML = svg("kbd", 22) + `<span>${tr("Escribir")}</span>`;
   chip.addEventListener("click", () => { buzz(HAP.press); chip.classList.remove("on"); openKeyboard(); });
 }
 
@@ -1751,7 +1940,7 @@ function onVol(m){
 function renderVol(){
   const bar = $("#volbar"), val = $("#volval"), lv = Math.round(volLevel());
   bar.style.setProperty("--v", lv); bar.classList.toggle("muted", VOL.mute);
-  val.textContent = VOL.mute ? "Silencio" : (VOL.level == null ? "" : lv + " %");
+  val.textContent = VOL.mute ? tr("Silencio") : (VOL.level == null ? "" : lv + " %");
   val.style.display = VOL.shown && val.textContent ? "block" : "none";
   const it = RAD.items.find(i => i.id === "vol");
   if (it) it.el.innerHTML = svg(VOL.mute ? "mute" : "vol", 24);
@@ -1796,12 +1985,12 @@ function initVolBar(){
 
 /* ================================================================ tutorial */
 const TUT = [
-  {sel:"#pad",    t:"Tu ratón",                 p:"Pruébalo: desliza un dedo para mover el cursor y toca para hacer clic. Con dos dedos, desplazas.", f:"f-move"},
-  {sel:"#clicks", t:"Clic izquierdo y derecho", p:"Pruébalo. Para arrastrar, mantén uno pulsado y mueve con otro dedo en el trackpad.", f:"f-click"},
-  {sel:"#dial",   t:"Cambiar de ventana",       p:"Pruébalo: toca para volver a la anterior, o mantén y desliza para ver tus ventanas.", f:"f-dial", place:"bottom"},
-  {sel:"#card",   t:"Lo que tienes delante",    p:"Muestra la app activa y sus botones cambian según lo que uses. Tócala para ver la pantalla del PC.", f:"f-tap"},
-  {sel:"#fab",    t:"Menú rápido",              p:"Pruébalo: mantén y desliza hasta una opción. TV, volumen, escritorio, teclado y energía.", f:"f-radial", r:"50%", pad:4},
-  {sel:"#grip",   t:"A tu medida",              p:"Mantén la barrita un momento y arrástrala hacia abajo para acercarlo todo a tu pulgar. Si dudas, mantén pulsado un botón para ver su nombre.", f:"f-drag", r:"999px", pad:2},
+  {sel:"#pad",    t:tr("Tu ratón"),                 p:tr("Pruébalo: desliza un dedo para mover el cursor y toca para hacer clic. Con dos dedos, desplazas."), f:"f-move"},
+  {sel:"#clicks", t:tr("Clic izquierdo y derecho"), p:tr("Pruébalo. Para arrastrar, mantén uno pulsado y mueve con otro dedo en el trackpad."), f:"f-click"},
+  {sel:"#dial",   t:tr("Cambiar de ventana"),       p:tr("Pruébalo: toca para volver a la anterior, o mantén y desliza para ver tus ventanas."), f:"f-dial", place:"bottom"},
+  {sel:"#card",   t:tr("Lo que tienes delante"),    p:tr("Muestra la app activa y sus botones cambian según lo que uses. Tócala para ver la pantalla del PC."), f:"f-tap"},
+  {sel:"#fab",    t:tr("Menú rápido"),              p:tr("Pruébalo: mantén y desliza hasta una opción. TV, volumen, escritorio, teclado y energía."), f:"f-radial", r:"50%", pad:4},
+  {sel:"#grip",   t:tr("A tu medida"),              p:tr("Mantén la barrita un momento y arrástrala hacia abajo para acercarlo todo a tu pulgar. Si dudas, mantén pulsado un botón para ver su nombre."), f:"f-drag", r:"999px", pad:2},
 ];
 const tutOn = () => !!$("#tut") && $("#tut").classList.contains("on");
 let tutI = 0;
@@ -1810,7 +1999,7 @@ function initTutorial(){
   tut.innerHTML = `<div id="tblock"></div><div id="tspot"><span id="tfinger"></span></div>
     <div id="tcard" aria-live="polite"><div class="tstep"></div><h3></h3><p></p>
       <div class="trow"><div class="tdots">${TUT.map(() => "<i></i>").join("")}</div>
-      <div class="tbtns"><button id="tskip">Saltar</button><button id="tnext">Siguiente</button></div></div></div>`;
+      <div class="tbtns"><button id="tskip">${tr("Saltar")}</button><button id="tnext">${tr("Siguiente")}</button></div></div></div>`;
   document.body.appendChild(tut);
   const next = () => { buzz(HAP.press); if (tutI >= TUT.length - 1) endTutorial(); else showStep(tutI + 1); };
   $("#tnext").addEventListener("click", e => { e.stopPropagation(); next(); });
@@ -1821,7 +2010,7 @@ function initTutorial(){
   document.addEventListener("touchend", e => {
     if (!tutOn()) return;
     const el = $(TUT[tutI].sel);
-    if (el && el.contains(e.target)){ const c = $("#tcard"); if (!c.classList.contains("tried")){ c.classList.add("tried"); c.querySelector(".tstep").textContent = "¡Eso es!"; } }
+    if (el && el.contains(e.target)){ const c = $("#tcard"); if (!c.classList.contains("tried")){ c.classList.add("tried"); c.querySelector(".tstep").textContent = tr("¡Eso es!"); } }
   }, {capture: true, passive: true});
   addEventListener("resize", () => { if (tut.classList.contains("on")) showStep(tutI, true); });
 }
@@ -1837,10 +2026,10 @@ function showStep(i, quiet){
   spot.style.left = (r.left - pd) + "px"; spot.style.top = (r.top - pd) + "px";
   spot.style.width = (r.width + pd * 2) + "px"; spot.style.height = (r.height + pd * 2) + "px";
   spot.style.borderRadius = st.r || getComputedStyle(el).borderRadius || "28px";
-  card.querySelector(".tstep").textContent = `${i + 1} de ${TUT.length}`;
+  card.querySelector(".tstep").textContent = tr("{0} de {1}", i + 1, TUT.length);
   card.querySelector("h3").textContent = st.t;
   card.querySelector("p").textContent = st.p;
-  $("#tnext").textContent = i === TUT.length - 1 ? "Empezar" : "Siguiente";
+  $("#tnext").textContent = tr(i === TUT.length - 1 ? tr("Empezar") : tr("Siguiente"));
   $("#tskip").style.visibility = i === TUT.length - 1 ? "hidden" : "visible";
   card.querySelectorAll(".tdots i").forEach((d, k) => d.classList.toggle("on", k === i));
   // la tarjeta va donde haya sitio: encima del elemento si cabe, si no debajo
@@ -1863,6 +2052,7 @@ function endTutorial(){
 
 /* ================================================================ arranque */
 function init(){
+  translateStatic();
   applyTheme();
   initFullscreen();
   $("#btnSettings").innerHTML = svg("settings", 20);
