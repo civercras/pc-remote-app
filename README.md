@@ -176,7 +176,7 @@ python server.py --simular    # dry run: logs actions instead of moving the mous
 
 To build the executable yourself, run `compilar.bat`. It creates `dist\MandoPC.exe` with PyInstaller.
 
-Every tag that starts with `v` (for example `v1.0`) triggers a GitHub Actions workflow that builds `MandoPC.exe` on Windows and attaches it to a new release.
+On every push to `main`, a GitHub Actions workflow builds `MandoPC.exe` on Windows. When `VERSION` in `server.py` changes, it also publishes the matching release (for example `v1.0`) with the executable attached.
 
 ## Notes
 
