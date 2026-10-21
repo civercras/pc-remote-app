@@ -26,7 +26,7 @@ from pathlib import Path
 
 from aiohttp import web, WSMsgType
 
-VERSION = "1.1"
+VERSION = "1.1.1"
 FROZEN = getattr(sys, "frozen", False)               # True dentro del .exe
 # RES: archivos de la app (página, icono). DATA: configuración y registro.
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -69,6 +69,8 @@ EN = {
         "So your phone can connect, Windows will ask for permission once.\n\nClick \"Yes\" in the next window.",
     "¿Quieres que Mando PC se inicie solo al encender el PC?\n\nPuedes cambiarlo cuando quieras desde su icono, junto al reloj.":
         "Start Mando PC automatically when your PC turns on?\n\nYou can change this any time from its icon next to the clock.",
+    "Hay otra copia de Mando PC funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?":
+        "Another copy of Mando PC is running in the background (probably an older version, without an icon next to the clock).\n\nClose it and use this one?",
     "Conectar móvil…": "Connect phone…", "Iniciar con Windows": "Start with Windows",
     "Permitir la conexión en el firewall": "Allow the connection in the firewall",
     "Abrir carpeta de datos": "Open data folder", "Salir": "Quit",
@@ -1062,6 +1064,75 @@ def request_firewall(port):
     return ok
 
 
+def port_owner(port):
+    """PID y nombre del programa que escucha en el puerto (solo Windows)."""
+    if not IS_WIN:
+        return None, ""
+    try:
+        out = subprocess.run(["netstat", "-ano", "-p", "TCP"], capture_output=True, text=True,
+                             creationflags=NO_WINDOW, timeout=10).stdout
+        pid = None
+        for line in out.splitlines():
+            parts = line.split()
+            if len(parts) >= 5 and parts[1].endswith(f":{port}") and parts[-1].isdigit() and parts[3].upper() in ("LISTENING", "ESCUCHANDO"):
+                pid = int(parts[-1])
+                break
+        if not pid:
+            return None, ""
+        out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV", "/NH"], capture_output=True, text=True,
+                             creationflags=NO_WINDOW, timeout=10).stdout.strip()
+        name = out.split(",")[0].strip('"') if out.startswith('"') else ""
+        return pid, name
+    except Exception as e:
+        log.warning("No se pudo ver qué usa el puerto %s: %s", port, e)
+        return None, ""
+
+
+def autostart_points_elsewhere():
+    """True si el inicio con Windows apunta a otra copia (p. ej. el script antiguo de los .bat)."""
+    if not IS_WIN:
+        return False
+    if _startup_lnk().exists():
+        return True
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
+            return winreg.QueryValueEx(k, APP_NAME)[0] != autostart_command()
+    except OSError:
+        return False
+
+
+def port_busy(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("0.0.0.0", port))
+            return False
+        except OSError:
+            return True
+
+
+def take_over_port(port):
+    """Si el puerto lo tiene otra copia de Mando PC sin icono, ofrece cerrarla. True si se liberó."""
+    pid, name = port_owner(port)
+    me = Path(sys.executable).name.lower()
+    log.info("Puerto %s en uso por %s (PID %s)", port, name or "?", pid)
+    if not pid or pid == os.getpid() or name.lower() not in ("python.exe", "pythonw.exe", "mandopc.exe"):
+        return False
+    if FROZEN and name.lower() == me:
+        return False                                    # es este mismo .exe, ya abierto con su icono
+    if not message_box(T("Hay otra copia de Mando PC funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?"), yes_no=True):
+        return False
+    subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, creationflags=NO_WINDOW)
+    log.info("Copia anterior cerrada (PID %s)", pid)
+    if autostart_points_elsewhere():
+        set_autostart(True)                             # el inicio con Windows pasa a esta copia
+    for _ in range(20):
+        time.sleep(0.25)
+        if not port_owner(port)[0]:
+            return True
+    return False
+
+
 _qr_open = threading.Lock()
 
 
@@ -1319,6 +1390,8 @@ def main():
         return
 
     print(T("  También está junto al reloj: clic en su icono para ver el QR. Ctrl+C o cerrar esta ventana lo detiene.\n"))
+    if port_busy(cfg["port"]):
+        take_over_port(cfg["port"])                     # otra copia sin icono: ofrecer cerrarla
     srv = ServerThread(app, cfg["port"])
     srv.start()
     srv.ready.wait(15)

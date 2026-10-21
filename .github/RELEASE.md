@@ -4,6 +4,10 @@ Grab **`MandoPC.exe`** below, run it on your Windows PC and scan the QR code wit
 
 > **"Windows protected your PC"?** The app isn't signed with a paid certificate yet. Click **More info → Run anyway**. The full source is in this repository.
 
+## What's new in 1.1.1
+
+- If an older copy of Mando PC is already running in the background (for example one started by the old `.bat` files, which has no tray icon), the app now offers to close it and take over, and moves "Start with Windows" to the new copy. Before, the `.exe` just quit and no icon appeared.
+
 ## What's new in 1.1
 
 - **English interface.** The phone UI is now in English and Spanish: it picks your phone's language automatically, and there's a new **Language** option in Settings.
