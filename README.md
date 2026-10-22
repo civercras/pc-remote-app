@@ -164,6 +164,7 @@ YouTube, Netflix, Prime Video, Disney+, Twitch, Spotify and your default browser
 - **`server.py`** (Python, aiohttp) serves the interface to the phone and turns its messages into mouse moves, clicks, key presses and window actions. It also reports the active window, lists open windows for the dial, extracts app icons, captures the screen and reads the system volume.
 - **`index.html`** is the entire phone interface in a single file: plain HTML, CSS and JavaScript, no frameworks.
 - The link in the QR code carries a **random access key**. Without it, nobody else on your network can control the PC.
+- **A link that survives IP changes.** On private networks the PC announces itself as `couchpad-<pc-name>.local` (mDNS, like a printer or a Chromecast). After you scan the QR, the phone switches to that address when it can, so the home-screen shortcut keeps working even if the router gives the PC a new IP. It's never announced on public networks, and you can turn it off from the tray icon.
 - Settings are stored in `%APPDATA%\Couchpad`.
 
 ## Building from source

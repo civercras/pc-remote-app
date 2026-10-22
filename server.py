@@ -26,7 +26,7 @@ from pathlib import Path
 
 from aiohttp import web, WSMsgType
 
-VERSION = "1.2"
+VERSION = "1.3"
 FROZEN = getattr(sys, "frozen", False)               # True dentro del .exe
 # RES: archivos de la app (página, icono). DATA: configuración y registro.
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -78,6 +78,10 @@ EN = {
         "Start Couchpad automatically when your PC turns on?\n\nYou can change this any time from its icon next to the clock.",
     "Hay otra copia de Couchpad funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?":
         "Another copy of Couchpad is running in the background (probably an older version, without an icon next to the clock).\n\nClose it and use this one?",
+    "Novedad: tu PC ahora tiene un nombre fijo en la red ({0}), así el enlace del móvil ya no deja de funcionar si cambia la IP.\n\nWindows te pedirá permiso una vez para activarlo.":
+        "New: your PC now has a fixed name on the network ({0}), so the phone link keeps working when the IP changes.\n\nWindows will ask for permission once to turn it on.",
+    "Nombre fijo: {0}": "Fixed name: {0}",
+    "Nombre fijo en la red (.local)": "Fixed network name (.local)",
     "Conectar móvil…": "Connect phone…", "Iniciar con Windows": "Start with Windows",
     "Permitir la conexión en el firewall": "Allow the connection in the firewall",
     "Abrir carpeta de datos": "Open data folder", "Salir": "Quit",
@@ -872,9 +876,12 @@ async def config(request):
     cfg = request.app["cfg"]
     winapi = request.app["winapi"]
     browser = winapi.default_browser() if winapi else None
+    namer = request.app.get("namer")
     return web.json_response({
         "version": VERSION,
         "host": socket.gethostname(),
+        "id": request.app["instance"],
+        "mdns": namer.host if namer and namer.active else "",
         "screen": request.app["grabber"] is not None,
         "icons": winapi is not None,
         "browser": os.path.basename(browser).lower() if browser else "",
@@ -882,6 +889,12 @@ async def config(request):
         "apps": [a["name"] for a in cfg.get("apps", [])],
         "shortcuts": [s for s in cfg.get("shortcuts", []) if all(map(valid_key, s.get("keys", [])))],
     })
+
+
+async def ping(request):
+    """Sin datos sensibles: lo usa la página para comprobar si el nombre .local llega a este mismo PC."""
+    return web.json_response({"app": "mando", "id": request.app["instance"]},
+                             headers={"Access-Control-Allow-Origin": "*", "Cache-Control": "no-store"})
 
 
 async def appicon(request):
@@ -985,11 +998,109 @@ def other_ips(main_ip):
     return sorted(ip for ip in ips if ip != main_ip and not ip.startswith("127."))
 
 
+def mdns_name():
+    """Nombre fijo en la red local: couchpad-<nombre del PC>.local"""
+    host = re.sub(r"[^a-z0-9-]+", "-", socket.gethostname().lower()).strip("-") or "pc"
+    return ("couchpad-" + host)[:63].rstrip("-")
+
+
+def network_private(ip):
+    """True si Windows tiene la red de esa IP como privada o de dominio (en una red pública no se anuncia)."""
+    if not sys.platform == "win32":
+        return True
+    cmd = (f"$i=(Get-NetIPAddress -IPAddress '{ip}' -ErrorAction Stop).InterfaceIndex;"
+           f"(Get-NetConnectionProfile -InterfaceIndex $i -ErrorAction Stop).NetworkCategory")
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", cmd], capture_output=True,
+                           text=True, creationflags=0x08000000, timeout=20)
+        cat = r.stdout.strip().lower()
+        if not cat:
+            log.warning("No se pudo saber el tipo de red (%s)", (r.stderr or "").strip()[:200])
+            return False
+        return cat in ("private", "domainauthenticated", "1", "2")
+    except Exception as e:
+        log.warning("No se pudo saber el tipo de red: %s", e)
+        return False
+
+
+class Namer(threading.Thread):
+    """Anuncia el PC como <nombre>.local por mDNS, para que el enlace del móvil no dependa de la IP.
+
+    Solo en redes privadas, y se puede desactivar desde el icono del reloj. Si la IP cambia, se actualiza."""
+
+    def __init__(self, cfg, port):
+        super().__init__(daemon=True)
+        self.cfg, self.port = cfg, port
+        self.name = mdns_name()
+        self.active = False                              # True mientras se está anunciando
+        self.zc = self.info = None
+        self.ip = None
+        self.wake = threading.Event()
+
+    @property
+    def host(self):
+        return f"{self.name}.local"
+
+    def _stop_announce(self):
+        if self.zc:
+            try:
+                self.zc.unregister_all_services()
+                self.zc.close()
+            except Exception:
+                pass
+        self.zc = self.info = None
+        if self.active:
+            log.info("Nombre %s retirado", self.host)
+        self.active = False
+
+    def _announce(self, ip):
+        from zeroconf import ServiceInfo, Zeroconf
+        info = ServiceInfo("_http._tcp.local.", f"Couchpad ({self.name})._http._tcp.local.",
+                           addresses=[socket.inet_aton(ip)], port=self.port, server=f"{self.host}.",
+                           properties={"app": "couchpad"})
+        if self.zc is None:
+            self.zc = Zeroconf()
+            self.zc.register_service(info, allow_name_change=True)
+        else:
+            self.zc.update_service(info)
+        self.info, self.active = info, True
+        log.info("Anunciado en la red como %s (%s)", self.host, ip)
+
+    def refresh(self):
+        self.wake.set()
+
+    def run(self):
+        checked = {}                                     # ip -> (privada, cuándo se comprobó)
+        while True:
+            try:
+                ip = local_ip()
+                want = self.cfg.get("mdns", True) and not ip.startswith("127.")
+                if want:
+                    priv, t = checked.get(ip, (None, 0))
+                    if priv is None or time.time() - t > 300:
+                        priv = network_private(ip)
+                        checked[ip] = (priv, time.time())
+                        if not priv:
+                            log.info("Red pública o desconocida: no se anuncia el nombre %s", self.host)
+                    want = priv
+                if want and (not self.active or ip != self.ip):
+                    self._announce(ip)
+                    self.ip = ip
+                elif not want and self.active:
+                    self._stop_announce()
+            except Exception as e:
+                log.warning("Nombre en la red no disponible: %s", e)
+                self._stop_announce()
+            self.wake.wait(30)
+            self.wake.clear()
+
+
 # ---------------------------------------------------------------- escritorio de Windows
 # Icono junto al reloj, ventana con el QR, inicio con Windows y permiso del firewall.
 
 APP_NAME = "Couchpad"
 LEGACY_NAME = "Mando PC"                                # nombre anterior (hasta la 1.1.1)
+NAMER = None                                            # anuncio del nombre .local (si zeroconf está instalado)
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 NO_WINDOW = 0x08000000
 IS_WIN = sys.platform == "win32"
@@ -1060,18 +1171,30 @@ def set_autostart(on):
     log.info("Iniciar con Windows: %s", "sí" if on else "no")
 
 
+MDNS_RULE = APP_NAME + " mDNS"
+
+
+def _rule_exists(name):
+    try:
+        r = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule", f"name={name}"],
+                           capture_output=True, creationflags=NO_WINDOW, timeout=10)
+        return r.returncode == 0
+    except Exception:
+        return True                                     # ante la duda, no molestar
+
+
+def port_rule_ok():
+    return _rule_exists(APP_NAME) or _rule_exists(LEGACY_NAME)   # la regla antigua sigue valiendo (mismo puerto)
+
+
+def mdns_rule_ok():
+    return not IS_WIN or _rule_exists(MDNS_RULE)
+
+
 def firewall_ok():
     if not IS_WIN:
         return True
-    try:
-        for name in (APP_NAME, LEGACY_NAME):            # la regla antigua sigue valiendo (mismo puerto)
-            r = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule", f"name={name}"],
-                               capture_output=True, creationflags=NO_WINDOW, timeout=10)
-            if r.returncode == 0:
-                return True
-        return False
-    except Exception:
-        return True                                     # ante la duda, no molestar
+    return port_rule_ok() and (NAMER is None or _rule_exists(MDNS_RULE))
 
 
 def request_firewall(port):
@@ -1079,9 +1202,16 @@ def request_firewall(port):
     if not IS_WIN:
         return False
     import ctypes
-    params = (f'advfirewall firewall add rule name="{APP_NAME}" dir=in action=allow '
-              f'protocol=TCP localport={port} profile=private,public')
-    ok = ctypes.windll.shell32.ShellExecuteW(None, "runas", "netsh", params, None, 0) > 32
+    cmds = []
+    if not port_rule_ok():
+        cmds.append(f'netsh advfirewall firewall add rule name="{APP_NAME}" dir=in action=allow '
+                    f'protocol=TCP localport={port} profile=private,public')
+    if NAMER is not None and not _rule_exists(MDNS_RULE):   # nombre .local: solo en redes privadas
+        cmds.append(f'netsh advfirewall firewall add rule name="{MDNS_RULE}" dir=in action=allow '
+                    f'protocol=UDP localport=5353 profile=private program="{sys.executable}"')
+    if not cmds:
+        return True
+    ok = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", "/c " + " & ".join(cmds), None, 0) > 32
     log.info("Regla del firewall %s", "solicitada" if ok else "rechazada")
     return ok
 
@@ -1189,6 +1319,9 @@ def show_qr_window(url, others=()):
             e.insert(0, url)
             e.configure(state="readonly")
             e.pack(fill="x", pady=(16, 4), ipady=6)
+            if NAMER is not None and NAMER.active:
+                tk.Label(root, text=T("Nombre fijo: {0}", f"http://{NAMER.host}:{url.split(':')[2].split('/')[0]}"),
+                         bg=BG, fg=MUT, font=(font, 9)).pack()
             if others:
                 tk.Label(root, text=T("Si no carga, prueba con la IP {0}", T(" o ").join(others)), bg=BG, fg=MUT,
                          font=(font, 9)).pack()
@@ -1256,7 +1389,12 @@ def first_run_setup(cfg, url, others):
         message_box(T("Para que tu móvil pueda conectarse, Windows te pedirá permiso una sola vez.\n\n"
                       "Pulsa «Sí» en la siguiente ventana."))
         request_firewall(port)
-        cfg["firewall_asked"] = changed = True
+        cfg["firewall_asked"] = cfg["mdns_fw_asked"] = changed = True
+    elif IS_WIN and NAMER is not None and not cfg.get("mdns_fw_asked") and not mdns_rule_ok():
+        message_box(T("Novedad: tu PC ahora tiene un nombre fijo en la red ({0}), así el enlace del móvil "
+                      "ya no deja de funcionar si cambia la IP.\n\nWindows te pedirá permiso una vez para activarlo.", NAMER.host))
+        request_firewall(port)
+        cfg["mdns_fw_asked"] = changed = True
     if IS_WIN and not cfg.get("autostart_asked") and not autostart_enabled():
         if message_box(T("¿Quieres que Couchpad se inicie solo al encender el PC?\n\n"
                          "Puedes cambiarlo cuando quieras desde su icono, junto al reloj."), yes_no=True):
@@ -1280,6 +1418,11 @@ def run_tray(cfg, url, others, on_quit):
     def toggle_autostart(icon, item):
         set_autostart(not autostart_enabled())
 
+    def toggle_mdns(icon, item):
+        cfg["mdns"] = not cfg.get("mdns", True)
+        save_config(cfg)
+        NAMER.refresh()
+
     def fix_firewall(icon, item):
         request_firewall(cfg["port"])
         time.sleep(3)
@@ -1299,6 +1442,8 @@ def run_tray(cfg, url, others, on_quit):
         pystray.MenuItem(T("Conectar móvil…"), qr, default=True),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(T("Iniciar con Windows"), toggle_autostart, checked=lambda item: autostart_enabled()),
+        pystray.MenuItem(T("Nombre fijo en la red (.local)"), toggle_mdns, checked=lambda item: cfg.get("mdns", True),
+                         visible=NAMER is not None),
         pystray.MenuItem(T("Permitir la conexión en el firewall"), fix_firewall, visible=lambda item: not fw["ok"]),
         pystray.MenuItem(T("Abrir carpeta de datos"), open_data),
         pystray.Menu.SEPARATOR,
@@ -1371,6 +1516,20 @@ def main():
     app.router.add_get("/appicon/{name}", appicon)
     app.router.add_get("/screen", screen)
     app.router.add_get("/ws", ws_handler)
+    app.router.add_get("/ping", ping)
+    app["instance"] = secrets.token_hex(8)
+    global NAMER
+    app["namer"] = None
+    try:
+        import zeroconf  # noqa: F401
+        NAMER = app["namer"] = Namer(cfg, cfg["port"])
+
+        async def start_namer(app):
+            if not NAMER.is_alive():
+                NAMER.start()
+        app.on_startup.append(start_namer)
+    except Exception as e:
+        log.warning("Sin nombre fijo en la red (instala zeroconf): %s", e)
 
     ip = local_ip()
     url = f"http://{ip}:{cfg['port']}/?k={cfg['token']}"

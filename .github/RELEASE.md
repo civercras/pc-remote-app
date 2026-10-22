@@ -4,6 +4,12 @@ Grab **`Couchpad.exe`** below, run it on your Windows PC and scan the QR code wi
 
 > **"Windows protected your PC"?** The app isn't signed with a paid certificate yet. Click **More info → Run anyway**. The full source is in this repository.
 
+## What's new in 1.3
+
+- **Your phone shortcut no longer breaks when the PC's IP changes.** On home (private) networks the PC now announces a fixed name, `couchpad-<pc-name>.local`. Scan the QR once more; the phone moves to that address on its own and your settings come along. Phones that can't use the name keep working by IP as before.
+- Windows asks for firewall permission once more, to let the phone find the name.
+- The name is never announced on public networks, and there's a **Fixed network name** switch in the tray menu.
+
 ## What's new in 1.2
 
 - **Mando PC is now Couchpad.** New name, same app.

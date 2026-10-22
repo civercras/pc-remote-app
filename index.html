@@ -549,7 +549,17 @@ body.tut #winflow{z-index:97} body.tut #kbdchip{z-index:97} body.tut #toast,body
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
-const VERSION = "1.2";
+// Al saltar de la dirección por IP a la del nombre fijo (.local), los ajustes viajan en la URL
+(() => {
+  const q = new URLSearchParams(location.search), m = q.get("m");
+  if (!m) return;
+  try {
+    const d = JSON.parse(decodeURIComponent(escape(atob(m))));
+    for (const [k, v] of Object.entries(d)) if (/^mando\./.test(k) && localStorage.getItem(k) == null) localStorage.setItem(k, v);
+  } catch(e){}
+  q.delete("m"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
+})();
+const VERSION = "1.3";
 
 /* ================================================================ iconos */
 const ICON = {
@@ -870,7 +880,27 @@ function loadConfig(){
   fetch(`/config?k=${encodeURIComponent(token)}`).then(r => r.json()).then(c => {
     CFG = c;
     if (c.host) setStatus(tr("Conectado") + " · " + c.host, true);
+    tryFixedName();
   }).catch(() => {});
+}
+
+// Nombre fijo: si la página se abrió por IP y el PC se anuncia como <nombre>.local, se salta allí
+// para que el acceso directo del móvil siga funcionando aunque el router cambie la IP del PC.
+let hopTried = false;
+async function tryFixedName(){
+  if (hopTried || !CFG.mdns || !CFG.id || !/^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)) return;
+  hopTried = true;
+  const base = `http://${CFG.mdns}:${location.port || 80}`;
+  try {
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 2500);
+    const r = await fetch(base + "/ping", {signal: ctl.signal, cache: "no-store"});
+    const d = await r.json();
+    if (d.id !== CFG.id) return;                       // otro PC con el mismo nombre: no saltar
+  } catch(e){ return; }                                // este móvil no resuelve .local: seguir por IP
+  const keep = {};
+  try { for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (/^mando\./.test(k) && k !== "mando.token") keep[k] = localStorage.getItem(k); } } catch(e){}
+  const m = btoa(unescape(encodeURIComponent(JSON.stringify(keep))));
+  location.replace(`${base}/?k=${encodeURIComponent(token)}&m=${encodeURIComponent(m)}`);
 }
 
 /* ================================================================ bucle de envío (un mensaje por frame) */
