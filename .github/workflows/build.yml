@@ -1,7 +1,7 @@
-# Builds MandoPC.exe on Windows.
+# Builds Couchpad.exe on Windows.
 # On every push to main it reads VERSION from server.py; if there is no release
 # for that version yet, it creates the tag and publishes the release with the .exe.
-name: Build MandoPC.exe
+name: Build Couchpad.exe
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
 
       - name: Build
         run: >
-          pyinstaller --noconfirm --onefile --noconsole --name MandoPC
+          pyinstaller --noconfirm --onefile --noconsole --name Couchpad
           --icon icon.ico
           --add-data "index.html;."
           --add-data "icon.png;."
@@ -54,8 +54,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MandoPC
-          path: dist/MandoPC.exe
+          name: Couchpad
+          path: dist/Couchpad.exe
 
       - name: Publish release
         if: steps.v.outputs.exists == 'false'
@@ -63,6 +63,6 @@ jobs:
         with:
           tag_name: ${{ steps.v.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Mando PC ${{ steps.v.outputs.tag }}
+          name: Couchpad ${{ steps.v.outputs.tag }}
           body_path: .github/RELEASE.md
-          files: dist/MandoPC.exe
+          files: dist/Couchpad.exe

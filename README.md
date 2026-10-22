@@ -2,12 +2,13 @@
   <img src="icon.png" width="96" alt="">
 </p>
 
-<h1 align="center">Mando PC</h1>
+<h1 align="center">Couchpad</h1>
 
 <p align="center">
   <b>Turn your phone into a couch remote for your Windows PC.</b><br>
   Trackpad, window switching, media controls, your streaming sites and a live view of your screen,<br>
-  designed to be used with one thumb, from the sofa or the bed.
+  designed to be used with one thumb, from the sofa or the bed.<br>
+  <sub>Formerly known as <i>Mando PC</i>.</sub>
 </p>
 
 <p align="center">
@@ -18,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/video/mando-pc-showcase.mp4"><img src="docs/screenshots/hero.png" alt="Mando PC on three phones: light theme, dark theme and the quick menu"></a>
+  <a href="docs/video/mando-pc-showcase.mp4"><img src="docs/screenshots/hero.png" alt="Couchpad on three phones: light theme, dark theme and the quick menu"></a>
 </p>
 
 <p align="center"><a href="docs/video/mando-pc-showcase.mp4"><b>▶ Watch the 45-second video</b></a></p>
@@ -27,15 +28,15 @@
 
 ## Why
 
-Remote desktop apps mirror your screen, but controlling a PC from the couch with them is clumsy: tiny targets, no shortcuts, no precision. **Mando PC is built like a remote, not a mirror.** You keep looking at your big screen; the phone gives you a trackpad, the right buttons for whatever app is in front, and nothing else.
+Remote desktop apps mirror your screen, but controlling a PC from the couch with them is clumsy: tiny targets, no shortcuts, no precision. **Couchpad is built like a remote, not a mirror.** You keep looking at your big screen; the phone gives you a trackpad, the right buttons for whatever app is in front, and nothing else.
 
 - **Nothing to install on the phone.** It runs in the phone's browser and can be added to the home screen like an app.
-- **One file on the PC.** Run `MandoPC.exe`, scan the QR code, done.
+- **One file on the PC.** Run `Couchpad.exe`, scan the QR code, done.
 - **Private by design.** Everything stays on your home network: no accounts, no cloud, no tracking.
 
 ## Getting started
 
-1. Download **`MandoPC.exe`** from [Releases](../../releases/latest) and run it.
+1. Download **`Couchpad.exe`** from [Releases](../../releases/latest) and run it.
 2. The first time, it will:
    - ask Windows for permission **once** so your phone can connect (click **Yes**),
    - ask whether to start with Windows,
@@ -43,7 +44,7 @@ Remote desktop apps mirror your screen, but controlling a PC from the couch with
 3. Scan the QR code with your phone's camera. The phone must be on the same Wi-Fi as the PC.
 4. Optional: in Chrome, tap **⋮ → Add to Home screen** to get an app icon.
 
-A short interactive tutorial walks you through everything the first time. Mando PC then lives in the system tray, next to the clock: click it to show the QR code again, toggle **Start with Windows** or quit.
+A short interactive tutorial walks you through everything the first time. Couchpad then lives in the system tray, next to the clock: click it to show the QR code again, toggle **Start with Windows** or quit.
 
 > **"Windows protected your PC"?** The executable isn't signed with a paid code-signing certificate, so SmartScreen may warn you the first time. Click **More info → Run anyway**. You can read every line of the source here, or build it yourself.
 
@@ -163,7 +164,7 @@ YouTube, Netflix, Prime Video, Disney+, Twitch, Spotify and your default browser
 - **`server.py`** (Python, aiohttp) serves the interface to the phone and turns its messages into mouse moves, clicks, key presses and window actions. It also reports the active window, lists open windows for the dial, extracts app icons, captures the screen and reads the system volume.
 - **`index.html`** is the entire phone interface in a single file: plain HTML, CSS and JavaScript, no frameworks.
 - The link in the QR code carries a **random access key**. Without it, nobody else on your network can control the PC.
-- Settings are stored in `%APPDATA%\MandoPC`.
+- Settings are stored in `%APPDATA%\Couchpad`.
 
 ## Building from source
 
@@ -176,14 +177,14 @@ python server.py --sin-icono  # in the console, no tray icon
 python server.py --simular    # dry run: logs actions instead of moving the mouse
 ```
 
-To build the executable yourself, run `compilar.bat`. It creates `dist\MandoPC.exe` with PyInstaller.
+To build the executable yourself, run `compilar.bat`. It creates `dist\Couchpad.exe` with PyInstaller.
 
-On every push to `main`, a GitHub Actions workflow builds `MandoPC.exe` on Windows. When `VERSION` in `server.py` changes, it also publishes the matching release (for example `v1.0`) with the executable attached.
+On every push to `main`, a GitHub Actions workflow builds `Couchpad.exe` on Windows. When `VERSION` in `server.py` changes, it also publishes the matching release (for example `v1.0`) with the executable attached.
 
 ## Notes
 
 - The interface is in **English** and **Spanish**. It follows your phone's language, and you can switch it in Settings. The PC side (tray menu, QR window) follows the Windows language.
-- Mando PC controls a **Windows** PC. The phone side works in any modern mobile browser; it's designed and tested for Android with Chrome.
+- Couchpad controls a **Windows** PC. The phone side works in any modern mobile browser; it's designed and tested for Android with Chrome.
 - Some things depend on Windows and the app you're using: a few browsers don't report text fields (so the **Write** button may not appear there), and the cursor halo can't draw over exclusive-fullscreen games.
 
 ## License

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mando PC - servidor para el ordenador.
+Couchpad - servidor para el ordenador.
 
 Sirve la interfaz web al móvil y ejecuta en el PC las acciones que llegan
 por WebSocket (mover ratón, clics, scroll, atajos, escribir texto...).
@@ -26,12 +26,19 @@ from pathlib import Path
 
 from aiohttp import web, WSMsgType
 
-VERSION = "1.1.1"
+VERSION = "1.2"
 FROZEN = getattr(sys, "frozen", False)               # True dentro del .exe
 # RES: archivos de la app (página, icono). DATA: configuración y registro.
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 if FROZEN:
-    DATA = Path(os.environ.get("APPDATA") or Path.home()) / "MandoPC"
+    _appdata = Path(os.environ.get("APPDATA") or Path.home())
+    DATA = _appdata / "Couchpad"
+    _legacy = _appdata / "MandoPC"                      # la app se llamaba Mando PC hasta la 1.1.1
+    if _legacy.is_dir() and not DATA.exists():
+        try:
+            _legacy.rename(DATA)
+        except OSError:
+            DATA = _legacy                              # si no se puede mover, se sigue usando la antigua
 else:
     DATA = Path(__file__).resolve().parent
 DATA.mkdir(parents=True, exist_ok=True)
@@ -59,7 +66,7 @@ def detect_lang():
 
 LANG = detect_lang()
 EN = {
-    "Mando PC · Conectar móvil": "Mando PC · Connect phone",
+    "Couchpad · Conectar móvil": "Couchpad · Connect phone",
     "Escanea con la cámara del móvil": "Scan with your phone's camera",
     "El móvil y el PC tienen que estar en la misma red": "Your phone and PC need to be on the same network",
     "Si no carga, prueba con la IP {0}": "If it doesn't load, try the IP {0}",
@@ -67,21 +74,21 @@ EN = {
     "¡Copiado!": "Copied!", "Copiar enlace": "Copy link", "Cerrar": "Close",
     "Para que tu móvil pueda conectarse, Windows te pedirá permiso una sola vez.\n\nPulsa «Sí» en la siguiente ventana.":
         "So your phone can connect, Windows will ask for permission once.\n\nClick \"Yes\" in the next window.",
-    "¿Quieres que Mando PC se inicie solo al encender el PC?\n\nPuedes cambiarlo cuando quieras desde su icono, junto al reloj.":
-        "Start Mando PC automatically when your PC turns on?\n\nYou can change this any time from its icon next to the clock.",
-    "Hay otra copia de Mando PC funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?":
-        "Another copy of Mando PC is running in the background (probably an older version, without an icon next to the clock).\n\nClose it and use this one?",
+    "¿Quieres que Couchpad se inicie solo al encender el PC?\n\nPuedes cambiarlo cuando quieras desde su icono, junto al reloj.":
+        "Start Couchpad automatically when your PC turns on?\n\nYou can change this any time from its icon next to the clock.",
+    "Hay otra copia de Couchpad funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?":
+        "Another copy of Couchpad is running in the background (probably an older version, without an icon next to the clock).\n\nClose it and use this one?",
     "Conectar móvil…": "Connect phone…", "Iniciar con Windows": "Start with Windows",
     "Permitir la conexión en el firewall": "Allow the connection in the firewall",
     "Abrir carpeta de datos": "Open data folder", "Salir": "Quit",
-    "Mando PC ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^).":
-        "Mando PC is already running.\n\nLook for its icon next to the clock (it may be under the ^ arrow).",
-    "\n  Mando PC {0} en marcha": "\n  Mando PC {0} is running", "  (MODO SIMULACIÓN)": "  (SIMULATION MODE)",
+    "Couchpad ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^).":
+        "Couchpad is already running.\n\nLook for its icon next to the clock (it may be under the ^ arrow).",
+    "\n  Couchpad {0} en marcha": "\n  Couchpad {0} is running", "  (MODO SIMULACIÓN)": "  (SIMULATION MODE)",
     "  Abre esto en el móvil (misma Wi-Fi):\n": "  Open this on your phone (same Wi-Fi):\n",
     "  Si no carga, prueba cambiando la IP por: {0}\n": "  If it doesn't load, try this IP instead: {0}\n",
     "  Ctrl+C para cerrar.\n": "  Press Ctrl+C to stop.\n",
-    "\n  El puerto {0} está ocupado: seguramente Mando PC ya está en marcha en segundo plano. No hace falta abrirlo otra vez.\n":
-        "\n  Port {0} is busy: Mando PC is probably already running in the background. No need to open it again.\n",
+    "\n  El puerto {0} está ocupado: seguramente Couchpad ya está en marcha en segundo plano. No hace falta abrirlo otra vez.\n":
+        "\n  Port {0} is busy: Couchpad is probably already running in the background. No need to open it again.\n",
     "  También está junto al reloj: clic en su icono para ver el QR. Ctrl+C o cerrar esta ventana lo detiene.\n":
         "  It's also next to the clock: click its icon to see the QR. Ctrl+C or closing this window stops it.\n",
 }
@@ -848,7 +855,7 @@ async def index(request):
 
 async def manifest(request):
     return web.json_response({
-        "name": "Mando PC", "short_name": "Mando PC",
+        "name": "Couchpad", "short_name": "Couchpad",
         "start_url": "/", "scope": "/", "display": "fullscreen", "orientation": "portrait",
         "background_color": "#050505", "theme_color": "#050505",
         "icons": [{"src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}],
@@ -981,7 +988,8 @@ def other_ips(main_ip):
 # ---------------------------------------------------------------- escritorio de Windows
 # Icono junto al reloj, ventana con el QR, inicio con Windows y permiso del firewall.
 
-APP_NAME = "Mando PC"
+APP_NAME = "Couchpad"
+LEGACY_NAME = "Mando PC"                                # nombre anterior (hasta la 1.1.1)
 RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 NO_WINDOW = 0x08000000
 IS_WIN = sys.platform == "win32"
@@ -998,8 +1006,18 @@ def message_box(text, yes_no=False):
     return ctypes.windll.user32.MessageBoxW(None, text, APP_NAME, flags) == 6
 
 
-def _startup_lnk():
-    return Path(os.environ.get("APPDATA", "")) / r"Microsoft\Windows\Start Menu\Programs\Startup\Mando PC.lnk"
+def _startup_lnks():
+    folder = Path(os.environ.get("APPDATA", "")) / r"Microsoft\Windows\Start Menu\Programs\Startup"
+    return [folder / f"{APP_NAME}.lnk", folder / f"{LEGACY_NAME}.lnk"]
+
+
+def _run_value(name):
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
+            return winreg.QueryValueEx(k, name)[0]
+    except OSError:
+        return None
 
 
 def autostart_command():
@@ -1013,13 +1031,9 @@ def autostart_command():
 def autostart_enabled():
     if not IS_WIN:
         return False
-    import winreg
-    try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
-            winreg.QueryValueEx(k, APP_NAME)
-            return True
-    except OSError:
-        return _startup_lnk().exists()
+    if _run_value(APP_NAME) is not None or _run_value(LEGACY_NAME) is not None:
+        return True
+    return any(p.exists() for p in _startup_lnks())
 
 
 def set_autostart(on):
@@ -1034,10 +1048,15 @@ def set_autostart(on):
                 winreg.DeleteValue(k, APP_NAME)
             except OSError:
                 pass
-    try:                                                # el acceso directo antiguo de los .bat
-        _startup_lnk().unlink()
-    except OSError:
-        pass
+        try:                                            # entrada con el nombre antiguo
+            winreg.DeleteValue(k, LEGACY_NAME)
+        except OSError:
+            pass
+    for lnk in _startup_lnks():                         # accesos directos antiguos de los .bat
+        try:
+            lnk.unlink()
+        except OSError:
+            pass
     log.info("Iniciar con Windows: %s", "sí" if on else "no")
 
 
@@ -1045,9 +1064,12 @@ def firewall_ok():
     if not IS_WIN:
         return True
     try:
-        r = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule", f"name={APP_NAME}"],
-                           capture_output=True, creationflags=NO_WINDOW, timeout=10)
-        return r.returncode == 0
+        for name in (APP_NAME, LEGACY_NAME):            # la regla antigua sigue valiendo (mismo puerto)
+            r = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule", f"name={name}"],
+                               capture_output=True, creationflags=NO_WINDOW, timeout=10)
+            if r.returncode == 0:
+                return True
+        return False
     except Exception:
         return True                                     # ante la duda, no molestar
 
@@ -1092,14 +1114,10 @@ def autostart_points_elsewhere():
     """True si el inicio con Windows apunta a otra copia (p. ej. el script antiguo de los .bat)."""
     if not IS_WIN:
         return False
-    if _startup_lnk().exists():
+    if any(p.exists() for p in _startup_lnks()) or _run_value(LEGACY_NAME) is not None:
         return True
-    import winreg
-    try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
-            return winreg.QueryValueEx(k, APP_NAME)[0] != autostart_command()
-    except OSError:
-        return False
+    cmd = _run_value(APP_NAME)
+    return cmd is not None and cmd != autostart_command()
 
 
 def port_busy(port):
@@ -1112,15 +1130,15 @@ def port_busy(port):
 
 
 def take_over_port(port):
-    """Si el puerto lo tiene otra copia de Mando PC sin icono, ofrece cerrarla. True si se liberó."""
+    """Si el puerto lo tiene otra copia de Couchpad sin icono, ofrece cerrarla. True si se liberó."""
     pid, name = port_owner(port)
     me = Path(sys.executable).name.lower()
     log.info("Puerto %s en uso por %s (PID %s)", port, name or "?", pid)
-    if not pid or pid == os.getpid() or name.lower() not in ("python.exe", "pythonw.exe", "mandopc.exe"):
+    if not pid or pid == os.getpid() or name.lower() not in ("python.exe", "pythonw.exe", "mandopc.exe", "couchpad.exe"):
         return False
     if FROZEN and name.lower() == me:
         return False                                    # es este mismo .exe, ya abierto con su icono
-    if not message_box(T("Hay otra copia de Mando PC funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?"), yes_no=True):
+    if not message_box(T("Hay otra copia de Couchpad funcionando en segundo plano (probablemente una versión antigua, sin icono junto al reloj).\n\n¿La cierro y uso esta?"), yes_no=True):
         return False
     subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, creationflags=NO_WINDOW)
     log.info("Copia anterior cerrada (PID %s)", pid)
@@ -1148,7 +1166,7 @@ def show_qr_window(url, others=()):
             from PIL import Image, ImageTk
             BG, FG, MUT = "#111111", "#F2F2F2", "#9A9A9A"
             root = tk.Tk()
-            root.title(T("Mando PC · Conectar móvil"))
+            root.title(T("Couchpad · Conectar móvil"))
             root.configure(bg=BG, padx=28, pady=24)
             root.resizable(False, False)
             try:
@@ -1240,7 +1258,7 @@ def first_run_setup(cfg, url, others):
         request_firewall(port)
         cfg["firewall_asked"] = changed = True
     if IS_WIN and not cfg.get("autostart_asked") and not autostart_enabled():
-        if message_box(T("¿Quieres que Mando PC se inicie solo al encender el PC?\n\n"
+        if message_box(T("¿Quieres que Couchpad se inicie solo al encender el PC?\n\n"
                          "Puedes cambiarlo cuando quieras desde su icono, junto al reloj."), yes_no=True):
             set_autostart(True)
         cfg["autostart_asked"] = changed = True
@@ -1277,7 +1295,7 @@ def run_tray(cfg, url, others, on_quit):
         on_quit()
 
     menu = pystray.Menu(
-        pystray.MenuItem(f"Mando PC {VERSION}", None, enabled=False),
+        pystray.MenuItem(f"Couchpad {VERSION}", None, enabled=False),
         pystray.MenuItem(T("Conectar móvil…"), qr, default=True),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(T("Iniciar con Windows"), toggle_autostart, checked=lambda item: autostart_enabled()),
@@ -1287,7 +1305,7 @@ def run_tray(cfg, url, others, on_quit):
         pystray.MenuItem(T("Salir"), quit_),
     )
     host = url.split("//", 1)[1].split("/", 1)[0]
-    icon = pystray.Icon("MandoPC", Image.open(RES / "icon.png"), f"Mando PC · {host}", menu)
+    icon = pystray.Icon("Couchpad", Image.open(RES / "icon.png"), f"Couchpad · {host}", menu)
     icon.run(setup=lambda ic: (setattr(ic, "visible", True), first_run_setup(cfg, url, others)))
 
 
@@ -1295,7 +1313,7 @@ def main():
     # Sin consola (.exe o arranque automático con pythonw): el registro va a mando.log
     handlers = None
     if FROZEN or sys.stdout is None or sys.stderr is None:
-        handlers = [logging.FileHandler(DATA / "mando.log", encoding="utf-8")]
+        handlers = [logging.FileHandler(DATA / "couchpad.log", encoding="utf-8")]
     logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s", datefmt="%d/%m %H:%M:%S",
                         handlers=handlers)
     try:
@@ -1356,8 +1374,8 @@ def main():
 
     ip = local_ip()
     url = f"http://{ip}:{cfg['port']}/?k={cfg['token']}"
-    log.info("Mando PC %s en marcha en %s", VERSION, url.split("?")[0])
-    print(T("\n  Mando PC {0} en marcha", VERSION) + (T("  (MODO SIMULACIÓN)") if simulate else ""))
+    log.info("Couchpad %s en marcha en %s", VERSION, url.split("?")[0])
+    print(T("\n  Couchpad {0} en marcha", VERSION) + (T("  (MODO SIMULACIÓN)") if simulate else ""))
     print(T("  Abre esto en el móvil (misma Wi-Fi):\n"))
     print("  " + url + "\n")
     others = other_ips(ip)
@@ -1384,8 +1402,8 @@ def main():
         try:
             web.run_app(app, host="0.0.0.0", port=cfg["port"], print=None, access_log=None)
         except OSError as e:
-            log.error("No se pudo abrir el puerto %s: ¿ya hay otro Mando PC en marcha? (%s)", cfg["port"], e)
-            print(T("\n  El puerto {0} está ocupado: seguramente Mando PC ya está en marcha"
+            log.error("No se pudo abrir el puerto %s: ¿ya hay otro Couchpad en marcha? (%s)", cfg["port"], e)
+            print(T("\n  El puerto {0} está ocupado: seguramente Couchpad ya está en marcha"
                     " en segundo plano. No hace falta abrirlo otra vez.\n", cfg["port"]))
         return
 
@@ -1396,8 +1414,8 @@ def main():
     srv.start()
     srv.ready.wait(15)
     if srv.error:
-        log.error("Puerto %s ocupado: Mando PC ya está en marcha (%s)", cfg["port"], srv.error)
-        message_box(T("Mando PC ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^)."))
+        log.error("Puerto %s ocupado: Couchpad ya está en marcha (%s)", cfg["port"], srv.error)
+        message_box(T("Couchpad ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^)."))
         return
     try:
         run_tray(cfg, url, others, srv.stop)
@@ -1409,7 +1427,7 @@ def main():
             pass
     srv.stop()
     srv.join(3)
-    log.info("Mando PC cerrado")
+    log.info("Couchpad cerrado")
 
 
 if __name__ == "__main__":

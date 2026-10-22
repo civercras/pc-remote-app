@@ -1,12 +1,18 @@
 ## Download
 
-Grab **`MandoPC.exe`** below, run it on your Windows PC and scan the QR code with your phone. No install needed on the phone.
+Grab **`Couchpad.exe`** below, run it on your Windows PC and scan the QR code with your phone. No install needed on the phone.
 
 > **"Windows protected your PC"?** The app isn't signed with a paid certificate yet. Click **More info → Run anyway**. The full source is in this repository.
 
+## What's new in 1.2
+
+- **Mando PC is now Couchpad.** New name, same app.
+- Updating is seamless: your settings, TV list and paired phone carry over, "Start with Windows" moves to the new name, and the existing firewall permission keeps working. If the old `MandoPC.exe` is still running, Couchpad offers to close it and take over.
+- You can delete the old `MandoPC.exe` after the first run.
+
 ## What's new in 1.1.1
 
-- If an older copy of Mando PC is already running in the background (for example one started by the old `.bat` files, which has no tray icon), the app now offers to close it and take over, and moves "Start with Windows" to the new copy. Before, the `.exe` just quit and no icon appeared.
+- If an older copy of the app is already running in the background (for example one started by the old `.bat` files, which has no tray icon), the app now offers to close it and take over, and moves "Start with Windows" to the new copy. Before, the `.exe` just quit and no icon appeared.
 
 ## What's new in 1.1
 
