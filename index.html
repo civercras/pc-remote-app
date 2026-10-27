@@ -520,7 +520,7 @@ body.tut #winflow{z-index:97} body.tut #kbdchip{z-index:97} body.tut #toast,body
     <button class="ib" id="scrCopy" aria-label="Copiar"></button>
     <button class="ib" id="scrPaste" aria-label="Pegar"></button>
     <button class="ib" id="scrFit" aria-label="Ajustar a la pantalla"></button>
-    <button class="ib" id="scrRotate" aria-label="Girar y pantalla completa"></button>
+    <button class="ib" id="scrDesk" aria-label="Escritorio"></button>
   </div>
   <div class="smid">
     <div id="stagewrap"><div id="stage"><img id="scrimg" alt="Pantalla del PC"></div><div id="loupe"></div><div id="scrmsg">Cargando…</div></div>
@@ -559,7 +559,7 @@ const $ = s => document.querySelector(s);
   } catch(e){}
   q.delete("m"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
 })();
-const VERSION = "1.3";
+const VERSION = "1.4";
 
 /* ================================================================ iconos */
 const ICON = {
@@ -1088,8 +1088,9 @@ function bindDial(d, dimOthers){
 
 /* ================================================================ trackpad */
 const pad = $("#pad");
-const T = new Map(); let g = null, lastTap = {t:0, x:0, y:0};
-const TAP_MS = 250, SLOP = 10, DTAP_MS = 300, EDGE = 34;
+const T = new Map(); let g = null, lastTap = {t:0, x:0, y:0}, pendClick = null;
+const TAP_MS = 250, SLOP = 10, DTAP_MS = 280, EDGE = 34;
+// El clic de un toque espera un instante: si llega un segundo toque, es doble clic o arrastrar (como en los portátiles)
 const centroid = () => { let x = 0, y = 0; for (const p of T.values()){ x += p.x; y += p.y; } return {x: x / T.size, y: y / T.size}; };
 function initPad(){
   pad.querySelector(".su").innerHTML = svg("chevup", 16, 2.2);
@@ -1109,11 +1110,12 @@ function initPad(){
       if (!load("mando.hinted")){ $("#hint").style.opacity = 0; save("mando.hinted", true); }
       const atEdge = S.left ? (t.clientX - r.left < EDGE) : (r.right - t.clientX < EDGE);
       if (atEdge && T.size === 1){ g.mode = "edge"; pad.classList.add("edge"); buzz(HAP.edge); }
-      else if (T.size === 1 && now - lastTap.t < DTAP_MS && Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < 40){
-        g.drag = true; send({t:"bd", b:"l"}); buzz(HAP.grab);
+      else if (T.size === 1 && pendClick && now - lastTap.t < DTAP_MS + 120 && Math.hypot(t.clientX - lastTap.x, t.clientY - lastTap.y) < 48){
+        clearTimeout(pendClick); pendClick = null; g.dbl = true;     // segundo toque: doble clic o, si se mueve, arrastrar
       }
     }
     g.max = Math.max(g.max, T.size);
+    if (g.dbl && !g.drag && T.size > 1){ g.dbl = false; send({t:"c", b:"l"}); }   // era otro gesto: el clic pendiente se hace
     if (T.size === 3){ g.c3 = centroid(); g.c3now = g.c3; }
   }, {passive:false});
 
@@ -1138,6 +1140,10 @@ function initPad(){
     }
     if (n === 1){
       if (g.max > 1) return;
+      if (g.dbl && !g.drag){                            // toque doble y arrastrar: se pulsa al empezar a moverse
+        if (!g.moved) return;
+        g.drag = true; send({t:"bd", b:"l"}); buzz(HAP.grab);
+      }
       const [id, p] = T.entries().next().value, q = prev.get(id);
       const dx = p.x - q.x, dy = p.y - q.y, v = Math.hypot(dx, dy) / dt;
       const gain = S.sens * (0.4 + S.accel * Math.min(v, 2.5));
@@ -1170,8 +1176,12 @@ function initPad(){
     const dur = performance.now() - g.start;
     pad.classList.remove("edge", "touching");
     if (g.drag){ send({t:"bu", b:"l"}); lastTap.t = 0; buzz(HAP.drop); }
+    else if (g.dbl){ send({t:"c", b:"l", n:2}); lastTap.t = 0; buzz(HAP.right); }   // doble clic
     else if (!g.moved && dur < TAP_MS){
-      if (g.max === 1){ send({t:"c", b:"l"}); lastTap = {t:performance.now(), x:g.fx, y:g.fy}; buzz(HAP.click); }
+      if (g.max === 1){
+        lastTap = {t:performance.now(), x:g.fx, y:g.fy}; buzz(HAP.click);
+        pendClick = setTimeout(() => { pendClick = null; send({t:"c", b:"l"}); }, DTAP_MS);
+      }
       else if (g.max === 2){ send({t:"c", b:"r"}); buzz(HAP.right); }
       else { send({t:"c", b:"m"}); buzz(HAP.middle); }
     } else if (g.mode === "three" && g.c3){
@@ -1753,41 +1763,43 @@ function showLoupe(p){
   SV.loupe = f;
 }
 function hideLoupe(){ loupe.style.display = "none"; SV.loupe = null; }
-function clickAt(f, p){
-  send({t:"abs", x:+f.fx.toFixed(4), y:+f.fy.toFixed(4), b:"l"}); buzz(10);
+function ripple(p){
   const r = document.createElement("span"); r.className = "ripple"; r.style.left = p.x + "px"; r.style.top = p.y + "px";
   wrap.appendChild(r); setTimeout(() => r.remove(), 500);
 }
+const absMsg = (f, extra) => Object.assign({t:"abs", x:+f.fx.toFixed(4), y:+f.fy.toFixed(4)}, extra || {});
+function clickAt(f, p, n = 1){ send(absMsg(f, {b:"l", n})); buzz(n > 1 ? HAP.right : 10); ripple(p); }
+// Un toque espera un instante por si llega otro: dos toques = doble clic; dos toques y mover = arrastrar
+const SDT = 300;
 function initScreen(){
-  $("#scrBack").innerHTML = svg("chevleft", 22, 2.2); $("#scrRotate").innerHTML = svg("rotate", 22);
+  $("#scrBack").innerHTML = svg("chevleft", 22, 2.2); $("#scrDesk").innerHTML = svg("desk", 22);
   $("#scrKbd").innerHTML = svg("kbd", 22); $("#scrFit").innerHTML = svg("zoomout", 22);
   $("#scrCopy").innerHTML = svg("copy", 22); $("#scrPaste").innerHTML = svg("paste", 22);
-  [$("#scrBack"), $("#scrRotate"), $("#scrKbd"), $("#scrFit"), $("#scrCopy"), $("#scrPaste")].forEach(tipify);
+  [$("#scrBack"), $("#scrDesk"), $("#scrKbd"), $("#scrFit"), $("#scrCopy"), $("#scrPaste")].forEach(tipify);
   $("#scrCopy").addEventListener("click", () => { buzz(HAP.press); sendKeys("ctrl+c"); });
   $("#scrPaste").addEventListener("click", () => { buzz(HAP.press); sendKeys("ctrl+v"); });
   $("#scrBack").addEventListener("click", closeScreen);
   bindStrip($("#sstrip"));
   $("#scrKbd").addEventListener("click", () => openKeyboard());
   $("#scrFit").addEventListener("click", () => { SV.s = 1; SV.tx = SV.ty = 0; applyStage(); buzz(8); });
-  $("#scrRotate").addEventListener("click", async () => {
-    try {
-      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-      const land = screen.orientation && screen.orientation.type.startsWith("landscape");
-      await screen.orientation.lock(land ? "portrait" : "landscape");
-    } catch(e){ toast(tr("Gira el móvil para verla en horizontal")); }
-  });
+  $("#scrDesk").addEventListener("click", () => { buzz(HAP.press); sendKeys("win+d"); });
 
   wrap.addEventListener("touchstart", e => {
     e.preventDefault();
     const ts = e.touches;
     if (ts.length === 1){
       const p = local(ts[0]);
-      SV.G = {mode:"one", p0:p, p, t0:performance.now(), moved:false, tx0:SV.tx, ty0:SV.ty};
+      const now = performance.now();
+      SV.G = {mode:"one", p0:p, p, t0:now, moved:false, tx0:SV.tx, ty0:SV.ty};
       clearTimeout(SV.holdT);
-      if (S.lupa) showLoupe(p);
+      if (SV.pend && now - SV.pend.t < SDT + 150 && Math.hypot(p.x - SV.pend.p.x, p.y - SV.pend.p.y) < 40){
+        clearTimeout(SV.pend.timer); SV.G.mode = "dbl"; SV.G.f0 = SV.pend.f; SV.pend = null;   // segundo toque
+      }
+      else if (S.lupa) showLoupe(p);
       else SV.holdT = setTimeout(() => { if (SV.G && !SV.G.moved){ SV.G.mode = "loupe"; showLoupe(SV.G.p); buzz(10); } }, 320);
     } else if (ts.length === 2){
       clearTimeout(SV.holdT); hideLoupe();
+      if (SV.G && SV.G.mode === "dbl" && !SV.G.dragging) send(absMsg(SV.G.f0, {b:"l"}));   // era un pellizco: el clic pendiente se hace
       const a = local(ts[0]), b = local(ts[1]);
       SV.G = {mode:"pinch", d0:Math.hypot(a.x - b.x, a.y - b.y), m0:{x:(a.x + b.x) / 2, y:(a.y + b.y) / 2}, s0:SV.s, tx0:SV.tx, ty0:SV.ty};
     }
@@ -1805,6 +1817,14 @@ function initScreen(){
     }
     if (ts.length !== 1) return;
     const p = local(ts[0]); G.p = p;
+    if (G.mode === "dbl"){                              // arrastrar: pulsar en el primer punto y seguir el dedo
+      if (!G.dragging){
+        if (Math.hypot(p.x - G.p0.x, p.y - G.p0.y) < 10) return;
+        G.dragging = true; send(absMsg(G.f0)); send({t:"bd", b:"l"}); buzz(HAP.grab);
+      }
+      const f = toFrac(p.x, p.y); if (f) send(absMsg(f));
+      return;
+    }
     if (S.lupa || G.mode === "loupe"){ showLoupe(p); return; }
     if (Math.hypot(p.x - G.p0.x, p.y - G.p0.y) > 10){ G.moved = true; clearTimeout(SV.holdT); }
     if (G.moved && SV.s > 1){ SV.tx = G.tx0 + p.x - G.p0.x; SV.ty = G.ty0 + p.y - G.p0.y; applyStage(); }
@@ -1812,8 +1832,20 @@ function initScreen(){
   const end = e => {
     e.preventDefault(); clearTimeout(SV.holdT);
     const G = SV.G; if (!G || e.touches.length > 0) { if (G && G.mode === "pinch") G.mode = "done"; return; }
-    if ((S.lupa || G.mode === "loupe") && SV.loupe) clickAt(SV.loupe, G.p);
-    else if (G.mode === "one" && !G.moved && performance.now() - G.t0 < 320){ const f = toFrac(G.p.x, G.p.y); if (f) clickAt(f, G.p); }
+    if (G.mode === "dbl"){
+      if (G.dragging){ send({t:"bu", b:"l"}); buzz(HAP.drop); }
+      else clickAt(G.f0, G.p, 2);                       // doble clic, en el punto del primer toque
+    }
+    else if ((S.lupa || G.mode === "loupe") && SV.loupe) clickAt(SV.loupe, G.p);
+    else if (G.mode === "one" && !G.moved && performance.now() - G.t0 < 320){
+      const f = toFrac(G.p.x, G.p.y);
+      if (f){
+        ripple(G.p); buzz(10);
+        const pend = {t:performance.now(), p:G.p, f};
+        pend.timer = setTimeout(() => { if (SV.pend === pend){ SV.pend = null; send(absMsg(f, {b:"l"})); } }, SDT);
+        SV.pend = pend;
+      }
+    }
     hideLoupe(); SV.G = null;
   };
   wrap.addEventListener("touchend", end, {passive:false});

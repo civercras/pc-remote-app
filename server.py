@@ -26,7 +26,7 @@ from pathlib import Path
 
 from aiohttp import web, WSMsgType
 
-VERSION = "1.3"
+VERSION = "1.4"
 FROZEN = getattr(sys, "frozen", False)               # True dentro del .exe
 # RES: archivos de la app (página, icono). DATA: configuración y registro.
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -724,8 +724,9 @@ class Session:
             self.inp.moveto(fx, fy)
             b = m.get("b")
             if b in ("l", "r"):
-                self.inp.button(b, True)
-                self.inp.button(b, False)
+                for _ in range(max(1, min(3, int(m.get("n", 1))))):   # n=2: doble clic
+                    self.inp.button(b, True)
+                    self.inp.button(b, False)
         elif t == "c":
             b = m.get("b", "l")
             for _ in range(max(1, min(3, int(m.get("n", 1))))):

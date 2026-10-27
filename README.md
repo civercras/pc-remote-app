@@ -55,7 +55,7 @@ A short interactive tutorial walks you through everything the first time. Couchp
 <img src="docs/screenshots/home-dark.png" width="260" align="right" alt="Home screen in the dark theme">
 
 - **One finger** moves the cursor, with acceleration: slow for precision, fast to cross the screen.
-- **Tap** to click, **two-finger tap** for right click, **double tap and drag** to select.
+- **Tap** to click, **double tap** to double-click, **two-finger tap** for right click, **double tap and drag** to drag things around or select, just like a laptop touchpad.
 - **Two fingers** to scroll (with inertia), **pinch** to zoom, the **right edge** works as a scroll bar.
 - **Three fingers**: up for Task View, down for the desktop, sideways to switch virtual desktops.
 - **Adjustable size**: hold the little bar on top of the trackpad and drag it to bring everything within reach of your thumb.
@@ -95,10 +95,10 @@ The card at the top always shows the app you're using on the PC, with its real i
 
 Tap the card to see your PC on the phone.
 
-- **Tap** anywhere to click exactly there.
+- **Tap** anywhere to click exactly there, **double tap** to double-click, **double tap and drag** to drag.
 - **Hold** for a magnifier, so you can aim precisely; let go to click.
 - **Pinch** to zoom in, drag to move around.
-- The same **smart buttons** and **dial** sit under your thumb, and a **scroll line** runs along the side.
+- The same **smart buttons** and **dial** sit under your thumb, a **scroll line** runs along the side, and the top bar has copy, paste, fit and **show desktop**.
 - Rotate the phone for a bigger picture: controls move to the edges.
 
 <br clear="right">

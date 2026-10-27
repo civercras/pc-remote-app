@@ -4,6 +4,13 @@ Grab **`Couchpad.exe`** below, run it on your Windows PC and scan the QR code wi
 
 > **"Windows protected your PC"?** The app isn't signed with a paid certificate yet. Click **More info → Run anyway**. The full source is in this repository.
 
+## What's new in 1.4
+
+- **Double tap and drag** on the trackpad now drags like a laptop touchpad: move files, windows or sliders, or select text. A plain double tap is a clean double-click.
+- **Screen view**: double tap to double-click, double tap and drag to drag, right where your finger is.
+- **Show desktop** button in the screen view's top bar (it replaces the rotate button; just turn the phone for landscape).
+- A single tap now waits a split second before clicking, so it can tell a single tap from a double one.
+
 ## What's new in 1.3
 
 - **Your phone shortcut no longer breaks when the PC's IP changes.** On home (private) networks the PC now announces a fixed name, `couchpad-<pc-name>.local`. Scan the QR once more; the phone moves to that address on its own and your settings come along. Phones that can't use the name keep working by IP as before.
