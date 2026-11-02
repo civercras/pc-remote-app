@@ -559,7 +559,7 @@ const $ = s => document.querySelector(s);
   } catch(e){}
   q.delete("m"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
 })();
-const VERSION = "1.4";
+const VERSION = "1.4.1";
 
 /* ================================================================ iconos */
 const ICON = {
@@ -851,24 +851,30 @@ if (qs.get("k")) save("mando.token", token);
 let ws = null, retry = 0, fatal = false, wasOn = false, CFG = {apps:[], shortcuts:[], host:"", screen:false};
 
 function setStatus(txt, on){ $("#statusText").textContent = txt; $("#dot").classList.toggle("on", !!on); }
+// Una sola conexión a la vez: los avisos de una conexión vieja se ignoran y no lanzan reintentos
+let retryT = null;
 function connect(){
   if (fatal) return;
+  clearTimeout(retryT); retryT = null;
+  if (ws && ws.readyState <= 1) return;                // ya hay una conectada o conectándose
   setStatus(tr("Conectando…"), false);
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  ws = new WebSocket(`${proto}://${location.host}/ws?k=${encodeURIComponent(token)}`);
-  ws.onopen = () => { retry = 0; wasOn = true; setStatus(tr("Conectado"), true); loadConfig(); if (S.halo) send({t:"halo", on:true}); };
-  ws.onmessage = e => { try {
+  const sock = new WebSocket(`${proto}://${location.host}/ws?k=${encodeURIComponent(token)}`);
+  ws = sock;
+  sock.onopen = () => { if (sock !== ws) return; retry = 0; wasOn = true; setStatus(tr("Conectado"), true); loadConfig(); if (S.halo) send({t:"halo", on:true}); };
+  sock.onmessage = e => { if (sock !== ws) return; try {
     const m = JSON.parse(e.data);
     if (m.t === "win") setWindow(m);
     else if (m.t === "wins") wfSet(m.list || []);
     else if (m.t === "caret") onCaret(!!m.on);
     else if (m.t === "vol") onVol(m);
   } catch(err){} };
-  ws.onclose = e => {
+  sock.onclose = e => {
+    if (sock !== ws) return;
     if (e.code === 4001){ fatal = true; setStatus(tr("Código incorrecto: escanea de nuevo el QR del PC"), false); return; }
     if (wasOn){ wasOn = false; buzz(HAP.error); }
     setStatus(tr("Sin conexión, reintentando…"), false);
-    setTimeout(connect, Math.min(4000, 400 * (++retry)));
+    retryT = setTimeout(connect, Math.min(4000, 400 * (++retry)));
   };
 }
 function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
@@ -1622,7 +1628,7 @@ function openSettings(){
     st.innerHTML = `<span></span>`; st.firstChild.textContent = ws && ws.readyState === 1 ? tr("Conectado a {0}", CFG.host || tr("tu PC")) : tr("Sin conexión");
     body.appendChild(st);
     const rec = document.createElement("button"); rec.className = "btn wide"; rec.textContent = tr("Reconectar");
-    rec.addEventListener("click", () => { try { ws && ws.close(); } catch(e){} fatal = false; retry = 0; connect(); closeSheet(); });
+    rec.addEventListener("click", () => { const old = ws; ws = null; try { old && old.close(); } catch(e){} fatal = false; retry = 0; connect(); closeSheet(); });
     body.appendChild(rec);
     const forget = document.createElement("button"); forget.className = "btn wide"; forget.textContent = tr("Olvidar este PC");
     forget.addEventListener("click", () => { save("mando.token", ""); toast(tr("Escanea el QR del PC para volver a conectar")); });

@@ -26,7 +26,7 @@ from pathlib import Path
 
 from aiohttp import web, WSMsgType
 
-VERSION = "1.4"
+VERSION = "1.4.1"
 FROZEN = getattr(sys, "frozen", False)               # True dentro del .exe
 # RES: archivos de la app (página, icono). DATA: configuración y registro.
 RES = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
@@ -1408,6 +1408,19 @@ def first_run_setup(cfg, url, others):
         save_config(cfg)
 
 
+def heal_autostart():
+    """Si "Iniciar con Windows" está activo pero apunta a otra copia o ruta (p. ej. un .exe movido), lo corrige."""
+    if not (IS_WIN and FROZEN):
+        return
+    try:
+        log.info("Inicio con Windows: %s", _run_value(APP_NAME) or "desactivado")
+        if autostart_enabled() and autostart_points_elsewhere():
+            set_autostart(True)
+            log.info("Inicio con Windows corregido para apuntar a %s", sys.executable)
+    except Exception as e:
+        log.warning("No se pudo revisar el inicio con Windows: %s", e)
+
+
 def run_tray(cfg, url, others, on_quit):
     import pystray
     from PIL import Image
@@ -1577,6 +1590,7 @@ def main():
         log.error("Puerto %s ocupado: Couchpad ya está en marcha (%s)", cfg["port"], srv.error)
         message_box(T("Couchpad ya está en marcha.\n\nBusca su icono junto al reloj (puede estar en la flechita ^)."))
         return
+    heal_autostart()
     try:
         run_tray(cfg, url, others, srv.stop)
     except Exception as e:                              # sin escritorio disponible: seguir sin icono

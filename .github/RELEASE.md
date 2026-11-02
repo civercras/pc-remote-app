@@ -4,6 +4,11 @@ Grab **`Couchpad.exe`** below, run it on your Windows PC and scan the QR code wi
 
 > **"Windows protected your PC"?** The app isn't signed with a paid certificate yet. Click **More info → Run anyway**. The full source is in this repository.
 
+## What's new in 1.4.1
+
+- **Steadier connection.** The phone could end up with several connections to the PC at once after waking up or reconnecting, which made it drop and reconnect on its own. Now it keeps exactly one.
+- **Start with Windows fixes itself** if the `.exe` was moved or replaced: on launch, Couchpad points the startup entry at the copy you're running.
+
 ## What's new in 1.4
 
 - **Double tap and drag** on the trackpad now drags like a laptop touchpad: move files, windows or sliders, or select text. A plain double tap is a clean double-click.
